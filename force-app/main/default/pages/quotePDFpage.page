@@ -1,0 +1,312 @@
+<apex:page controller="PageSectionController" renderAs="pdf" sidebar="false" showHeader="false" docType="html-5.0" applyBodyTag="false" applyHtmlTag="false" standardStylesheets="false">
+    <head>
+        <style>
+            @page {
+            size: A4;
+            margin: 0;
+            background: #b7c4cf;
+            }
+            
+            body {
+            font-family: 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 13px;
+            color: #2b2b2b;
+            background-color: #fff;
+            }
+            
+            .header-second {
+            background-color: #0f395f;
+            color: #fff;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            margin-top: 8px;
+            }
+            
+            .header {
+            background-color: #0f395f;
+            color: #fff;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            }
+            
+            .section {
+            background-color: #f2f4f7;
+            border: 1px solid #dbe1e8;
+            padding: 18px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+            }
+            
+            .section-title {
+            font-size: 16px;
+            color: #0f395f;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #ccd4de;
+            padding-bottom: 4px;
+            }
+            
+            .field {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            }
+            
+            .label {
+            font-weight: 600;
+            width: 160px;
+            color: #0f395f;
+            }
+            
+            .value {
+            flex: 1;
+            color: #333;
+            }
+            
+            .image-box {
+            width: 200px;
+            height: 120px;
+            border: 1px dashed #999;
+            border-radius: 6px;
+            text-align: center;
+            line-height: 120px;
+            color: #999;
+            background-color: #fff;
+            margin-top: 6px;
+            }
+            
+            .page-break {
+            page-break-before: always;
+            }
+            
+            body {
+            font-family: 'Helvetica', sans-serif;
+            color: #333;
+            }
+            
+            .section-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #0f395f;
+            }
+            
+            .table-container {
+            width: 100%;
+            border-collapse: collapse;
+            }
+            
+            .table-header {
+            background-color: #0f395f;
+            color: #ffffff;
+            font-weight: bold;
+            }
+            
+            .table-container td,
+            .table-container th {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            }
+            
+            .table-row {
+            background-color: #f9f9f9;
+            }
+            
+            .section-total {
+            text-align: right;
+            font-size: 14px;
+            margin-top: 10px;
+            font-weight: bold;
+            }
+            
+            .note {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
+            }
+            
+            .warranty-termNcondition{
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            }
+            
+        </style>
+    </head>
+    
+    <body>
+        
+        <!-- Page 1 -->
+        <apex:outputPanel rendered="{!isTitle}">
+            <div class="header">Title</div>
+            
+            <div class="section">
+                <div class="section-title">Basic Information</div>
+                <div class="field"><div class="label">Layout Name:</div><div class="value">{!Quotes.Layout_Name__c}</div></div>
+                <div class="field"><div class="label">Date:</div><div class="value">
+                    
+                    <apex:outputText value="{0, date, MMM d','  yyyy}">
+                        <apex:param value="{!Quotes.Date__c}" />
+                    </apex:outputText>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="label">Primary Image:</div>
+                    <div class="value">
+                        <div class="image-box">
+                            <img src="{!Quotes.Primary_Image__c}" alt="Trulli" width="100" />
+                        </div>
+                        <!-- <div class="image-box">No file chosen</div> -->
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="label">Secondary Image:</div>
+                    <div class="value">
+                        <div class="image-box">
+                            <img src="{!Quotes.Secondary_Image__c}" alt="Trulli" width="120" />
+                        </div>
+                        <!-- <div class="image-box">No file chosen</div> -->
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="label">Company Address</div>
+                    <div class="value">
+                        {!companyinfo.Street__c}<br/>
+                        {!companyinfo.City__c}, {!companyinfo.State_Province__c} - {!companyinfo.Postal_Code__c}<br/>
+                        Email: {!companyinfo.Email__c}<br/>
+                        Phone: {!companyinfo.Phone__c}
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="label">Customer Address</div>
+                    <div class="value">
+                        {!Quotes.Name}<br/>
+                        {!Quotes.Ship_To__Street__s}<br/>
+                        {!Quotes.Ship_To__City__s}, {!Quotes.Ship_To__StateCode__s} - {!Quotes.Ship_To__PostalCode__s}<br/>
+                        {!Quotes.Ship_To__CountryCode__s}
+                    </div>
+                </div>
+                
+            </div>
+        </apex:outputPanel>
+        
+        <!-- Page 2 -->
+        <apex:outputPanel rendered="{!isLetterFromOwner}">
+            <div class="page-break"></div>
+            <div class="header-second">Customer Address Info</div>
+            
+            <div class="section">
+                <div class="section-title">Personal Details</div>
+                <div class="field"><div class="label">First Name:</div><div class="value">{!Quotes.First_Name__c}</div></div>
+                <div class="field"><div class="label">Last Name:</div><div class="value">{!Quotes.Last_Name__c}</div></div>
+                <div class="field"><div class="label">Street Address:</div><div class="value">{!Quotes.Street_Address__c}</div></div>
+                <div class="field"><div class="label">City:</div><div class="value">{!Quotes.City__c}</div></div>
+                <div class="field"><div class="label">State/Province:</div><div class="value">{!Quotes.State_Province__c}</div></div>
+                <div class="field"><div class="label">Zip/Postal Code:</div><div class="value">{!Quotes.Zip_code_Postal_code__c}</div></div>
+            </div>
+            
+        </apex:outputPanel>
+        
+        <!-- Page 3 -->
+        <apex:outputPanel rendered="{!isQuoteDetails}">
+            <div class="page-break"></div>
+            <div class="header-second">Quote Details</div>
+            
+            <div class="section">
+                <apex:repeat value="{!sectionsData}" var="sw">
+                    
+                    <!-- Section Name -->
+                    <div class="section-name">
+                        {!sw.section.Name}
+                    </div>
+                    
+                    <!-- Table -->
+                    <table class="table-container">
+                        <tr class="table-header">
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Line Total</th>
+                        </tr>
+                        
+                        <apex:repeat value="{!sw.section.QuoteLineItems__r}" var="qli">
+                            <tr class="table-row">
+                                <td>{!qli.Product__r.Name}</td>
+                                <td>{!qli.Quantity__c}</td>
+                                <td>{!qli.Price__c}</td>
+                                <td>{!ROUND(qli.Quantity__c * qli.Price__c, 2)}</td>
+                            </tr>
+                        </apex:repeat>
+                    </table>
+                    
+                    <!-- Section Total -->
+                    <div class="section-total">
+                        Section Total: {!sw.sectionTotal}
+                    </div>
+                    
+                    <!-- Note -->
+                    <div class="note">
+                        Note: {!sw.section.Notes__c}
+                    </div>
+                    
+                </apex:repeat>
+                <div class="grand-total" style="margin-top:20px; font-weight:bold;">
+                    Grand Total: {!grandTotal}
+                </div>
+            </div>
+        </apex:outputPanel>
+        
+        <!-- Page 4 -->
+        <apex:outputPanel rendered="{!isWarranty}">
+            <div class="page-break"></div>
+            <div class="header-second">Warranty</div>
+            
+            <div class="section">
+                
+                <div class="field">
+                    <img src="{!Quotes.Warranty__c}" width="700" />
+                    
+                    
+                    <!-- <iframe src="{!Quotes.Warranty__c}" width="700"frameborder="0" ></iframe> -->
+                </div>
+            </div>
+        </apex:outputPanel>
+        
+        <!-- Page 5 -->
+        <apex:outputPanel rendered="{!isTermsAndConditions}">
+            <div class="page-break"></div>
+            <div class="header-second">Terms and Conditions</div>
+            
+            <div class="section">
+                
+                <div class="field">
+                    <img src="{!Quotes.Terms_Conditions__c}" alt="Trulli" width="615" />
+                    
+                </div>
+            </div>
+        </apex:outputPanel>
+        
+        <apex:outputPanel rendered="{'isCustomPage'}">
+            <!-- Custom Pages 
+<div class="page-break"></div>
+<div class="header-second">{!pg['label']}</div>
+<div class="section">
+<apex:outputText value="{!pg['richTextValue']}" escape="false"/>
+</div>
+-->
+        </apex:outputPanel>
+    </body>
+</apex:page>

@@ -1,0 +1,109 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 10-02-2024
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <c-header-cmp title="Manage Your Quote Templates" title-sec="Simplify template management — all in one place."></c-header-cmp>
+    <div style="background: white;">
+        <!-- <div class="slds-col slds-size_1-of-1 slds-text-align_center">
+                            <div class="slds-grid slds-grid_align-center slds-wrap">
+                                <lightning-icon icon-name="standard:text_template" alternative-text="Quotes Icon" size="large" class="slds-m-right_small"></lightning-icon>
+                                <div>
+                                    <h1 class="slds-text-heading_large slds-text-color_inverse">Customize Template</h1>
+                                    <p class="slds-text-body_regular">Easily customize your template details below</p>
+                                </div>
+                            </div>
+                        </div> -->
+
+        <!-- Main Section with 3 areas: Search, Middle Blank, and Create Button -->
+        <div class="template-design">
+            <div class="search-template">
+                <lightning-input label="Search Templates" type="search" value={searchTerm} onchange={handleSearchChange} placeholder="Search by template name"></lightning-input>
+            </div>
+            <button class="new-template" style="margin-right: 20px;" onclick={handleCreateTemplate}>Create New Template</button>
+            <template if:true={isModalOpen}>
+                <c-master-template-modal-cmp onrefreshlist={refreshLayouts} record-id={recordId} onclose={handleModalClose} template-type={templateType}>
+                </c-master-template-modal-cmp>
+            </template>
+        </div>
+
+        <!-- List View -->
+        <div title="Shared Layouts" style="padding-bottom: 4px;">
+            <div class="layout-wrapper">
+                <template for:each={layouts} for:item="layout">
+                    <div key={layout.Id} class="layout-item">
+                        <div class="layout-name">{layout.Layout_Name__c}</div>
+                        <div class="layout-actions">
+                            <template if:false={layout.IsDefault__c}>
+                                <button class="custom-button default-button" data-id={layout.Id} onclick={handleConfirm}>Make Default</button>
+                            </template>
+                            <template if:true={layout.IsDefault__c}>
+                                <button class="custom-button disabled-button" disabled>Default</button>
+                            </template>
+
+                            <button class="icon-button" onclick={handleEdit} data-id={layout.Id}>
+                                <lightning-icon icon-name="utility:edit" alternative-text="Edit" size="x-small"></lightning-icon>
+                            </button>
+
+                            <!-- <button class="icon-button-delete delete-button" onclick={handleDelete} data-id={layout.Id}>
+                                <lightning-icon icon-name="utility:delete" alternative-text="Delete" size="x-small"></lightning-icon>
+                            </button> -->
+
+                            <button class="icon-button-delete delete-button" key={layout.Id} onclick={handleClikDelete} data-id={layout.Id} data-label={layout.Id}>
+                                <lightning-icon icon-name="utility:delete" alternative-text="Delete" size="x-small"></lightning-icon>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
+                <template if:true={showMessageTemplate}>
+
+                    <div
+                        style="display: flex; align-items: center; background-color: #f0f4ff; border-left: 5px solid #007bff; padding: 12px 16px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); color: #333; font-family: Arial, sans-serif; max-width: 400px; margin: 12px 0;">
+                        <span style="font-size: 20px; margin-right: 10px;">ℹ️</span>
+                        <span>Templates are not available.</span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <template if:true={deleteTemplate}>
+        <div class="modal-backdrop">
+            <div class="confirm-modal">
+                <div class="confirm-header">
+                    <h2 class="confirm-title">Delete Template</h2>
+                    <button title="Close" onclick={deleteTemplateCancel} class="confirm-close">×</button>
+                </div>
+                <div class="confirm-body">
+                    <p>Are You Sure Delete This Templates?</p>
+                </div>
+                <div class="confirm-footer">
+                    <button class="btn-cancel" onclick={deleteTemplateCancel}>Cancel</button>
+                    <button class="btn-yes" onclick={handleDelete}>Yes</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={makeDefaultWarning}>
+        <div class="modal-backdrop">
+            <div class="confirm-modal">
+                <div class="confirm-header">
+                    <h2 class="confirm-title">Confirm Default Layout</h2>
+                    <button title="Close" onclick={makeDefaultWarningCancel} class="confirm-close">×</button>
+                </div>
+                <div class="confirm-body">
+                    <p>Are you sure you want to set this layout as the default?</p>
+                </div>
+                <div class="confirm-footer">
+                    <button class="btn-cancel" onclick={makeDefaultWarningCancel}>Cancel</button>
+                    <button class="btn-yes" onclick={handleMakeDefault}>Yes</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</template>

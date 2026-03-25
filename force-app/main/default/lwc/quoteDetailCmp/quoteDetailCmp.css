@@ -1,0 +1,212 @@
+.section-container {
+    margin-bottom: 20px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    padding: 16px;
+    background: #f9f9f9;
+}
+
+.section-title {
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 8px;
+    background: #e6e6e6;
+    border-radius: 5px;
+}
+
+.action-button {
+    margin-left: 10px;
+}
+
+.input-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.text-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 5px;
+    background: #f4f4f4;
+}
+
+.lightning-icon {
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.item-input {
+    flex: 2;
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    font-size: 14px;
+    background: #f4f4f4;
+    margin-right: 10px;
+}
+
+.measure-unit,
+.line-total {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    padding: 8px;
+}
+
+.quantity-input,
+.price-input,
+.tax-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #f4f4f4;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.delete-icon {
+    color: red;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.btn-delete {
+    background: #eb1f1f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 0.5rem 0.7rem;
+    border: none;
+    border-radius: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transform-style: preserve-3d;
+}
+
+lightning-icon {
+    --slds-c-icon-color-foreground-default: white;
+}
+
+.del-section {
+    background: #eb1f1f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 0.5rem 0.7rem;
+    border: none;
+    margin-top: 7.5%;
+    float: right;
+    border-radius: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transform-style: preserve-3d;
+}
+
+.section-total {
+    text-align: right;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 10px;
+    padding-right: 10px;
+    color: #333;
+}
+
+.note-container {
+    margin-top: 16px;
+}
+
+.note-textarea {
+    width: 100%;
+    height: 50px;
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    font-size: 14px;
+    background: #ffffff;
+    resize: none;
+}
+
+lightning-button {
+    --slds-c-button-radius-border: 3rem;
+}
+
+lightning-combobox {
+    --slds-c-input-radius-border: 1.5rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.3);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+}
+
+.confirm-modal {
+  background:white;
+  border-radius:16px;
+  width:420px;
+  max-width:90%;
+  padding:1.5rem 2rem;
+  box-shadow:0 8px 30px rgba(0,0,0,0.2);
+}
+
+.confirm-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.confirm-title{
+  font-weight:700;
+}
+
+.confirm-footer{
+  display:flex;
+  justify-content:center;
+  gap:1.5rem;
+  margin-top:1.5rem;
+}
+
+.btn-yes {
+  background: #003366;
+  color: white;
+  padding: 0.5rem 2rem;
+  border: none;
+  border-radius: 2rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.confirm-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  font-weight: bold;
+}

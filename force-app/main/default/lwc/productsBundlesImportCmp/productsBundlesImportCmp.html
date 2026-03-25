@@ -1,0 +1,50 @@
+<template>
+    <template if:true={loaded}>
+        <!-- <lightning-spinner style="height: 100vh;" alternative-text="Loading"></lightning-spinner> -->
+        <c-wave-loader></c-wave-loader>
+    </template>
+
+    <div class="container">
+
+        <lightning-input required type="text" label="Bundle Name" value={bundleNameValue} onchange={handleChangeBundle} class="input-box"></lightning-input>
+
+        <lightning-input type="text" label="Description" value={bundleDescription} onchange={handleChangeBundle} class="input-box"></lightning-input>
+
+
+        <!-- Custom Button -->
+        <div class="button-row">
+            <button class="btn-primary" onclick={downloadTemplate}>
+                Download Sample Template
+            </button>
+        </div>
+
+        <!-- File Upload -->
+        <lightning-input type="file" label="Upload CSV" accept=".csv" onchange={handleFileChange} class="input-file"></lightning-input>
+
+        <!-- Validate + Clear Buttons -->
+        <div class="button-row">
+            <!-- <button class="btn-primary" onclick={handleValidate}>Validate & Preview</button> -->
+            <button class="btn-danger" onclick={handleClear}>Clear</button>
+        </div>
+
+        <!-- Error Message -->
+        <template if:true={errorMessage}>
+            <div class="error-text">{errorMessage}</div>
+        </template>
+
+        <!-- Data Preview -->
+        <template if:true={previewRows.length}>
+            <div class="table-section">
+
+                <lightning-datatable key-field="_rowIndex" data={previewRows} columns={columns} hide-checkbox-column class="preview-table"></lightning-datatable>
+
+                <div class="button-row">
+                    <button class="btn-primary" onclick={handleImport}>
+                        Import to Salesforce
+                    </button>
+                </div>
+            </div>
+        </template>
+
+    </div>
+</template>

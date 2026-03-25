@@ -1,0 +1,190 @@
+<template>
+    <div class="manager-shell">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading pricing admin"></lightning-spinner>
+        </template>
+
+        <template if:true={isBooksView}>
+            <div class="section-header">
+                <div class="filter-row">
+                    <lightning-input class="search-input" type="search" label="Search Price Books" value={bookSearchKey} onchange={handleBookSearchChange}></lightning-input>
+                    <lightning-combobox label="Currency" value={bookCurrencyFilter} options={currencyOptions} onchange={handleBookCurrencyChange}></lightning-combobox>
+                </div>
+                <button class="action-button" onclick={openNewPriceBookModal}>Create Price Book</button>
+            </div>
+
+            <div class="helper-banner">
+                Price Books control runtime quote pricing. Product default price should be treated only as fallback data.
+            </div>
+
+            <template if:true={hasPriceBooks}>
+                <div class="cards-container">
+                    <template for:each={priceBooks} for:item="priceBook">
+                        <div key={priceBook.Id} class="price-card">
+                            <div class="card-header">
+                                <div>
+                                    <p class="card-title">{priceBook.Name}</p>
+                                    <p class="card-subtitle">{priceBook.Currency__c}</p>
+                                </div>
+                                <div class="badge-row">
+                                    <span class="status-badge">{priceBook.statusLabel}</span>
+                                    <template if:true={priceBook.Is_Default__c}>
+                                        <span class="default-badge">{priceBook.defaultLabel}</span>
+                                    </template>
+                                </div>
+                            </div>
+                            <p class="card-description">{priceBook.Description__c}</p>
+                            <div class="card-actions">
+                                <button class="secondary-button" data-id={priceBook.Id} onclick={openEditPriceBookModal}>Edit</button>
+                                <button class="danger-button" data-id={priceBook.Id} onclick={confirmDeletePriceBook}>Delete</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <template if:false={hasPriceBooks}>
+                <div class="empty-state">No custom Price Books found. Create the first book to control quote pricing.</div>
+            </template>
+        </template>
+
+        <template if:false={isBooksView}>
+            <div class="section-header">
+                <div class="filter-grid">
+                    <lightning-combobox name="priceBookFilter" label="Price Book" value={selectedEntryPriceBookId} options={priceBookOptions} onchange={handleEntryFilterChange}></lightning-combobox>
+                    <lightning-combobox name="productFilter" label="Product" value={selectedEntryProductId} options={productOptions} onchange={handleEntryFilterChange}></lightning-combobox>
+                    <lightning-combobox name="currencyFilter" label="Currency" value={entryCurrencyFilter} options={currencyOptions} onchange={handleEntryFilterChange}></lightning-combobox>
+                    <lightning-input type="search" label="Search Entries" value={entrySearchKey} onchange={handleEntrySearchChange}></lightning-input>
+                </div>
+                <div class="button-row">
+                    <button class="secondary-button" onclick={openCloneModal}>Clone Entries</button>
+                    <button class="action-button" onclick={openNewPriceBookEntryModal}>Create Entry</button>
+                </div>
+            </div>
+
+            <div class="helper-banner">
+                Quote and bundle runtime pricing should resolve from these entries based on the selected custom Price Book.
+            </div>
+
+            <template if:true={hasPriceBookEntries}>
+                <div class="table-shell">
+                    <table class="entry-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Code</th>
+                                <th>Price Book</th>
+                                <th>Unit Price</th>
+                                <th>Currency</th>
+                                <th>Active</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={priceBookEntries} for:item="entry">
+                                <tr key={entry.Id}>
+                                    <td>{entry.productName}</td>
+                                    <td>{entry.productCode}</td>
+                                    <td>{entry.priceBookName}</td>
+                                    <td>{entry.Unit_Price__c}</td>
+                                    <td>{entry.Currency__c}</td>
+                                    <td>{entry.activeLabel}</td>
+                                    <td class="row-actions">
+                                        <button class="secondary-button small-button" data-id={entry.Id} onclick={openEditPriceBookEntryModal}>Edit</button>
+                                        <button class="danger-button small-button" data-id={entry.Id} onclick={confirmDeletePriceBookEntry}>Delete</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <template if:false={hasPriceBookEntries}>
+                <div class="empty-state">No Price Book Entries match the current filters.</div>
+            </template>
+        </template>
+    </div>
+
+    <template if:true={isPriceBookModalOpen}>
+        <div class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">Price Book</h2>
+                    <button class="close-button" onclick={closePriceBookModal}>X</button>
+                </div>
+                <div class="modal-body">
+                    <lightning-input label="Name" value={bookForm.Name} data-field="Name" onchange={handleBookFormChange}></lightning-input>
+                    <lightning-combobox label="Currency" value={bookForm.Currency__c} options={currencyOptions} data-field="Currency__c" onchange={handleBookFormChange}></lightning-combobox>
+                    <lightning-textarea label="Description" value={bookForm.Description__c} data-field="Description__c" onchange={handleBookFormChange}></lightning-textarea>
+                    <lightning-input type="checkbox" label="Active" checked={bookForm.Is_Active__c} data-field="Is_Active__c" onchange={handleBookFormChange}></lightning-input>
+                    <lightning-input type="checkbox" label="Default for this currency" checked={bookForm.Is_Default__c} data-field="Is_Default__c" onchange={handleBookFormChange}></lightning-input>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-button" onclick={closePriceBookModal}>Cancel</button>
+                    <button class="action-button" onclick={savePriceBook}>Save</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isPriceBookEntryModalOpen}>
+        <div class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">Price Book Entry</h2>
+                    <button class="close-button" onclick={closePriceBookEntryModal}>X</button>
+                </div>
+                <div class="modal-body">
+                    <lightning-combobox label="Price Book" value={entryForm.Price_Book__c} options={priceBookOptions} data-field="Price_Book__c" onchange={handleEntryFormChange}></lightning-combobox>
+                    <lightning-combobox label="Product" value={entryForm.Product__c} options={productOptions} data-field="Product__c" onchange={handleEntryFormChange}></lightning-combobox>
+                    <lightning-input label="Product Code" value={currentEntryProductCode} disabled></lightning-input>
+                    <lightning-input type="number" label="Unit Price" value={entryForm.Unit_Price__c} step="0.01" data-field="Unit_Price__c" onchange={handleEntryFormChange}></lightning-input>
+                    <lightning-combobox label="Currency" value={entryForm.Currency__c} options={currencyOptions} data-field="Currency__c" onchange={handleEntryFormChange}></lightning-combobox>
+                    <lightning-input type="checkbox" label="Active" checked={entryForm.Is_Active__c} data-field="Is_Active__c" onchange={handleEntryFormChange}></lightning-input>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-button" onclick={closePriceBookEntryModal}>Cancel</button>
+                    <button class="action-button" onclick={savePriceBookEntry}>Save</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isCloneModalOpen}>
+        <div class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">Clone Price Book Entries</h2>
+                    <button class="close-button" onclick={closeCloneModal}>X</button>
+                </div>
+                <div class="modal-body">
+                    <lightning-combobox label="Source Price Book" value={cloneForm.sourcePriceBookId} options={priceBookOptions} data-field="sourcePriceBookId" onchange={handleCloneFormChange}></lightning-combobox>
+                    <lightning-combobox label="Target Price Book" value={cloneForm.targetPriceBookId} options={priceBookOptions} data-field="targetPriceBookId" onchange={handleCloneFormChange}></lightning-combobox>
+                    <lightning-input type="checkbox" label="Overwrite existing target entries" checked={cloneForm.overwriteExisting} data-field="overwriteExisting" onchange={handleCloneFormChange}></lightning-input>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-button" onclick={closeCloneModal}>Cancel</button>
+                    <button class="action-button" onclick={handleCloneEntries}>Clone</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isDeleteConfirmOpen}>
+        <div class="modal-backdrop">
+            <div class="confirm-modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">{deleteModalTitle}</h2>
+                    <button class="close-button" onclick={closeDeleteConfirm}>X</button>
+                </div>
+                <div class="confirm-body">{deleteModalMessage}</div>
+                <div class="modal-footer">
+                    <button class="secondary-button" onclick={closeDeleteConfirm}>Cancel</button>
+                    <button class="danger-button" onclick={handleDeleteConfirmed}>Delete</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</template>
+

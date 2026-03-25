@@ -1,0 +1,554 @@
+<template>
+
+    <c-header-cmp title="Build Your Product & Bundle Catalog" title-sec="Define your product strategy with images, pricing, and bundle precision.">
+    </c-header-cmp>
+    <template if:true={loaded}>
+        <!-- <lightning-spinner style="height: 100vh;" alternative-text="Loading"></lightning-spinner> -->
+        <c-wave-loader></c-wave-loader>
+    </template>
+
+    <div style="background: white;">
+
+        <div class="slds-p-around_small">
+            <lightning-tabset>
+
+                <lightning-tab label="Products">
+                    <div class="product-search-container">
+                        <!-- Product Search Section -->
+                        <div class="header">
+                            <div>
+                                <div class="search-bar">
+                                    <lightning-input class="custom-input" label="Search Product" placeholder="Search Product" type="search" onchange={handleSearchChange}>
+                                    </lightning-input>
+                                    <lightning-combobox
+                                        label="Currency"
+                                        value={currencyFilter}
+                                        options={currencyOptionsSearch}
+                                        onchange={handleCurrencyFilter}>
+                                    </lightning-combobox>
+                                </div>
+
+                            </div>
+                            <div>
+                                <button class="new-template" style="margin-right: 10px;" onclick={handelOnClickNewProd}>Create New Product</button>
+                                <button class="new-template" style="margin-right: 20px;" onclick={openImportProductsModal}>Import products</button>
+                            </div>
+                        </div>
+
+
+                      <!-- Product List Section -->
+<div class="cards-container">
+    <template for:each={productRecords} for:item="productRecord" for:index="index">
+        <div key={productRecord.Id}>
+            <div key={productRecord.Id} data-index={PriceIndex} data-id={productRecord.Id}>
+                <div class="card">
+
+                    <div class='product-with-edit'>
+                        <!-- 🔥 UPDATED LINE -->
+                        <p class="card-title">{productRecord.displayName}</p>
+
+                        <lightning-icon class="icon-btn" data-id={productRecord.Id} onclick={handelOnClickEditProd} icon-name="utility:edit"
+                            alternative-text="edit" size="x-small" title="edit">
+                        </lightning-icon>
+                    </div>
+
+                    <div class="content-row">
+                        <div class="field">
+                            <label>Unit Per Cost:</label>
+                            <div class="input-group">
+                                <span class="symbol">{productRecord.currencySymbol}</span>
+                                <input type="number" step="0.01" min="0" class="input-box" data-id={productRecord.Id} value={productRecord.Default_Price__c}
+                                    oninput={handlePriceInput} onblur={updateDefaultPrice} />
+                            </div>
+                        </div>
+
+                        <div class="field2">
+                            <label style="width: 100px;">Default Quantity</label>
+                            <input type="number" class="quantity-input" step="1" data-id={productRecord.Id} value={productRecord.Default_Quantity__c}
+                                onkeydown={preventDecimal} onchange={onchangeNumber} onblur={updateDefaultQuantity} />
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-delete" onclick={handleOnProductAction} data-id={productRecord.Id} label="Delete" data-label="Delete">
+                                <lightning-icon icon-name="utility:delete" alternative-text="Delete" size="xx-small" class="delete-icon"></lightning-icon>
+                            </button>
+
+                            <button class="btn btn-clear" onclick={handleOnProductAction} label="Clear" data-id={productRecord.Id}
+                                data-label="Clear">Clear</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </template>
+
+                            <template if:true={showMessageProducts}>
+
+                                <div
+                                    style="display: flex; align-items: center; background-color: #f0f4ff; border-left: 5px solid #007bff; padding: 12px 16px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); color: #333; font-family: Arial, sans-serif; max-width: 400px; margin: 12px 0;">
+                                    <span style="font-size: 20px; margin-right: 10px;">ℹ️</span>
+                                    <span>products are not available.</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- modal start -->
+                    <template if:true={isShowModal}>
+                        <div class="modal-backdrop">
+                            <div class="confirm-modal">
+                                <div class="confirm-header">
+                                    <h2 class="confirm-title">Product</h2>
+                                    <button title="Close" onclick={hideModalBox} class="confirm-close">×</button>
+                                </div>
+                                <div class="confirm-body">
+                                    <p if:true={productDelete}>Are You Sure Delete This Product?</p>
+                                    <p if:true={productClear}>Are you sure? Clearing this will reset the value to default of zero</p>
+                                </div>
+                                <div class="confirm-footer">
+                                    <button class="btn-cancel" onclick={hideModalBox}>Cancel</button>
+                                    <button if:true={productDelete} class="btn-yes" onclick={handleClickDelete}>Yes</button>
+                                    <button if:true={productClear} class="btn-yes" onclick={handleClickClear}>Yes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                </lightning-tab>
+                <lightning-tab label="Price Books">
+                    <c-price-book-manager view-mode="books"></c-price-book-manager>
+                </lightning-tab>
+
+                <lightning-tab label="Price Book Entries">
+                    <c-price-book-manager view-mode="entries"></c-price-book-manager>
+                </lightning-tab>
+
+                <lightning-tab label="Bundles">
+
+                    <div class="header">
+                        <!-- <div style="width: 16%;">
+                            <lightning-input class="search" type="search" label="Search Bundle" placeholder="Search by bundle name"
+                                onchange={handleSearchChangeBundle}></lightning-input>
+                        </div> -->
+
+                        <div style="display:flex; gap:10px; width:30%;">
+
+                            <lightning-input
+                                class="search"
+                                type="search"
+                                label="Search Bundle"
+                                placeholder="Search by bundle name"
+                                onchange={handleSearchChangeBundle}>
+                            </lightning-input>
+
+                            <lightning-combobox
+                                label="Currency"
+                                value={bundleCurrencyFilter}
+                                options={currencyOptionsSearch}
+                                onchange={handleBundleCurrencyFilter}>
+                            </lightning-combobox>
+
+                        </div>
+
+                        <div>
+                            <button class="new-template" style="margin-right: 10px;" onclick={handleClickNewProductBundle}>Create new bundle with existing product </button>
+                            <button class="new-template" onclick={openImportProductsBundleModal}>Create new bundle with New product </button>
+                        </div>
+                    </div>
+
+                    <div class="slds-vertical-tabs" style="border-radius:8px">
+                        <template if:false={showMessage}>
+                            <ul class="slds-vertical-tabs__nav menu" role="tablist" aria-orientation="vertical">
+                                <template for:each={productBundleRecords} for:item="prodBundle" for:index="index">
+                                    <div if:true={prodBundle.selected} data-id={prodBundle.bundleId} onclick={handleClickTab} key={prodBundle.bundleId}>
+                                        <li data-id={prodBundle.bundleId} class="slds-vertical-tabs__nav-item slds-is-active" title={prodBundle.name} role="presentation" style=" font-size: 20px; 
+                                                                    background: #003366;
+                                                                    color: white;
+                                                                    border-radius: 3rem;
+                                                                    margin-bottom: 0.5rem;">
+                                            <a class="slds-vertical-tabs__link" href="#" role="tab" tabindex="0" aria-selected="false" aria-controls="slds-vertical-tabs-0"
+                                                id="slds-vertical-tabs-0__nav">
+                                                <span class="slds-vertical-tabs__left-icon"></span>
+                                                <span class="slds-truncate title" title={prodBundle.name}>{prodBundle.name}</span>
+                                                <span class="slds-vertical-tabs__right-icon">
+                                                    <button class="btn btn-delete" onclick={deleteProductBundle} data-id={prodBundle.bundleId} label="Delete" data-label="Delete">
+                                                        <lightning-icon icon-name="utility:delete" alternative-text="Delete" size="xx-small" class="delete-icon"></lightning-icon>
+                                                    </button>
+                                                </span>
+                                            </a>
+                                        </li>
+                                    </div>
+
+                                    <div if:false={prodBundle.selected} data-id={prodBundle.bundleId} onclick={handleClickTab} key={prodBundle.bundleId}>
+                                        <li class="slds-vertical-tabs__nav-item" title={prodBundle.name} role="presentation" style=" font-size: 20px;
+                                                background: white; 
+                                                border-radius: 3rem;
+                                                border: 1.5px solid #ddd;
+                                                margin-bottom: 0.5rem;    
+                                                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                                                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 6px 6px rgba(0, 0, 0, 0.1);
+                                        transform-style: preserve-3d;">
+                                            <a class="slds-vertical-tabs__link" href="#" role="tab" tabindex="0" aria-selected="false" aria-controls="slds-vertical-tabs-0"
+                                                id="slds-vertical-tabs-1__nav">
+                                                <span class="slds-vertical-tabs__left-icon"></span>
+                                                <span class="slds-truncate nottitle" title={prodBundle.name}>{prodBundle.name}</span>
+                                                <span class="slds-vertical-tabs__right-icon"> </span>
+                                            </a>
+                                        </li>
+                                    </div>
+
+                                </template>
+
+
+                            </ul>
+                            <div class="slds-vertical-tabs__content slds-show" id="slds-vertical-tabs-0" role="tabpanel" aria-labelledby="slds-vertical-tabs-0__nav">
+                                <template if:true={isShow}>
+                                    <div class="table-section">
+                                        <table>
+                                            <tr class="table-header">
+                                                <th style="width:45%;">Item</th>
+                                                <th style="width:15%;"><span class="">Quantity</span></th>
+                                                <th style="width:15%;"><span class="">Price</span></th>
+                                                <th style="width:15%;">Line Total</th>
+                                                <th style="width:10%;"></th>
+                                            </tr>
+
+                                            <template for:each={productItemList} for:item="item" for:index="index">
+                                                <tr key={item.Id} class="Items" title={index}>
+                                                    <td style="width:45%; padding-left: 0">
+                                                        <lightning-record-picker class="record-picker" variant="label-hidden" label="product" filter={filter}
+                                                            placeholder="Search Products..." data-index={index} value={item.productId} object-api-name="Product__c"
+                                                            onchange={handleChangeProductLineItem} onblur={updateProductLineItemProduct} data-id={item.Id}>
+                                                        </lightning-record-picker>
+                                                    </td>
+                                                    <td style="width:15%;">
+                                                        <lightning-input class="quantity" style="margin-top: 1px;" label="Quantity" variant="label-hidden" value={item.Quantity}
+                                                            data-index={index} type="Number" onchange={handleChangeProductLineItem} onblur={updateProductLineItemQuantity}
+                                                            data-id={item.Id}>
+                                                        </lightning-input>
+                                                    </td>
+                                                    <td style="width:15%;">
+                                                        <lightning-input class="price" label="Price" variant="label-hidden" data-index={index} type="Number" value={item.Price}
+                                                            formatter="currency" step="0.01" onchange={handleChangeProductLineItem} onblur={updateProductLineItemPrice}
+                                                            data-id={item.Id}>
+                                                        </lightning-input>
+                                                    </td>
+                                                    <td>
+                                                        <span class="linetotal">{item.LineTotal}</span>
+                                                    </td>
+                                                    <!-- <td style="width:15%;">
+                                                <lightning-input class="linetotal" label="line Total" variant="label-hidden" readonly
+                                                    data-index={index} type="Number" value={item.LineTotal}
+                                                    formatter="currency" step="0.01" onchange={handleChangeProductItem}>
+                                                </lightning-input>
+                                            </td> -->
+                                                    <td style="width:10%;">
+                                                        <button class="btn btn-delete" onclick={deleteItem} data-id={item.Id} access-key={item.Id} data-index={index} label="Delete"
+                                                            data-label="Delete">
+                                                            <lightning-icon icon-name="utility:delete" alternative-text="Delete" size="xx-small"
+                                                                class="delete-icon"></lightning-icon>
+                                                        </button>
+                                                        <!-- <lightning-icon class="icon-delete" data-id={item.Id}
+                                                    access-key={item.Id} data-index={index} icon-name="utility:delete"
+                                                    alternative-text="delete" variant="error" size="x-small"
+                                                    title="delete" onclick={deleteItem}
+                                                    onchange={handleChangeProductItem}>
+                                                </lightning-icon> -->
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </table>
+                                        <button class="add-item" onclick={addItem}>Add Item</button>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:true={showMessage}>
+                            <div class="slds-align_absolute-center">
+                                <div
+                                    style="display: flex; align-items: center; background-color: #f0f4ff; /*border-left: 5px solid #007bff; */padding: 12px 16px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); color: #333; font-family: Arial, sans-serif; max-width: 900px; margin: 21px 0; font-size: 23px;">
+                                    <span style="font-size: 20px; margin-right: 10px;">ℹ️</span>
+                                    <span>There are no product bundles available right now. Please create one to continue. </span>
+                                </div>
+
+                            </div>
+                        </template>
+                    </div>
+                </lightning-tab>
+            </lightning-tabset>
+        </div>
+    </div>
+
+    <template if:true={productBundle}>
+        <div class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">Create Product Bundle</h2>
+                    <lightning-icon class="modal-close" onclick={handleClickCancelProductBundle} icon-name="utility:close" alternative-text="close" size="x-small" title="close">
+                    </lightning-icon>
+                </div>
+                <div class="modal-body">
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <div class="modal-left">
+                            <lightning-input required="true" type="text" label="Bundle Name" value={bundleNameValue} onchange={handleChangeBundle}></lightning-input>
+                            <lightning-input type="text" label="Description" value={bundleDescription} onchange={handleChangeBundle}></lightning-input>
+                            <lightning-combobox
+                                class="slds-p-top_medium"
+                                label="Currency"
+                                value={bundleCurrency}
+                                options={currencyOptions}
+                                disabled={currencyLocked}
+                                required
+                                onchange={handleBundleCurrencyChange}>
+                            </lightning-combobox>
+                            <table class="slds-m-top_medium slds-m-bottom_medium" style="width: 100%;">
+                                <!-- <thead>
+                                    <th style="width:45%;">Item</th>
+                                    <th style="width:15%;"><span class="">Quantity</span></th>
+                                    <th style="width:15%;"><span class="">Price</span></th>
+                                    <th style="width:15%;">Line total</th>
+                                    <th style="width:10%;"></th>
+                                </thead> -->
+                                <tr class="table-header">
+                                    <th style="width:45%;">Item</th>
+                                    <th style="width:15%;"><span class="">Quantity</span></th>
+                                    <th style="width:15%;"><span class="">Price</span></th>
+                                    <th style="width:15%;">Line Total</th>
+                                    <th style="width:10%;"></th>
+                                </tr>
+
+                                <template for:each={productItemListInsert} for:item="item" for:index="index">
+                                    <tr key={item.Id} class="Items" title={index}>
+                                        <td style="width:45%;">
+                                            <lightning-record-picker class="record-picker" variant="label-hidden" label="product" placeholder="Search Products..." filter={filter}
+                                                data-index={index} value={item.productId} object-api-name="Product__c" onchange={handleChangeProductItem}>
+                                            </lightning-record-picker>
+                                        </td>
+                                        <td style="width:15%;">
+                                            <lightning-input class="quantity" step="0.01" style="margin-top: 1px;" label="Quantity" variant="label-hidden" value={item.Quantity}
+                                                data-index={index} type="Number" onchange={handleChangeProductItem}>
+                                            </lightning-input>
+                                        </td>
+                                        <td style="width:15%;">
+                                            <lightning-input class="price" label="Price" variant="label-hidden" data-index={index} type="Number" value={item.Price}
+                                                formatter="currency" step="0.01" onchange={handleChangeProductItem}>
+                                            </lightning-input>
+                                        </td>
+                                        <td>
+                                            <span class="linetotal">{item.LineTotal}</span>
+                                        </td>
+
+                                        <!-- <td style="width:15%;">
+                                            <lightning-input class="linetotal" label="LineTotal" variant="label-hidden" readonly data-index={index} type="Number"
+                                                value={item.LineTotal} formatter="currency" step="0.01" onchange={handleChangeProductItem}>
+                                            </lightning-input>
+                                        </td> -->
+                                        <td style="width:10%;">
+                                            <button class="btn btn-delete" onclick={deleteItemInsert} data-id={item.Id} access-key={item.id} data-index={index} label="Delete"
+                                                data-label="Delete">
+                                                <lightning-icon icon-name="utility:delete" alternative-text="Delete" size="xx-small" class="delete-icon"></lightning-icon>
+                                            </button>
+                                            <!-- <lightning-icon data-id={item.Id} access-key={item.id} data-index={index} icon-name="utility:delete"
+                                                alternative-text="delete" variant="error" size="x-small" title="delete" onclick={deleteItemInsert}>
+                                            </lightning-icon> -->
+                                        </td>
+                                    </tr>
+                                </template>
+                            </table>
+                            <button class="add-product" title="Add Item" onclick={addItemInsert}>Add Item</button>
+                            <!-- <lightning-button class="add-product" label="Add Item" title="Add Item" onclick={addItemInsert}></lightning-button> -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="newbtn-cancel" onclick={handleClickCancelProductBundle}>Cancel</button>
+                    <button type="button" style="width:122px;" class="btn-save" onclick={handleClickInsertProductBundle}>Create Bundle</button>
+                </div>
+            </div>
+
+        </div>
+
+    </template>
+
+    <template if:true={NewProdBool}>
+        <div class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">New Product</h2>
+                    <lightning-icon class="modal-close" onclick={handelOnClickCancelNewProd} icon-name="utility:close" alternative-text="close" size="x-small" title="close">
+                    </lightning-icon>
+                    <!-- <button class="modal-close" onclick={handelOnClickCancelNewProd}>×</button> -->
+                </div>
+                <div class="modal-body">
+                    <div class="modal-left">
+                        <lightning-input required name="Product Name" label="Product Name:" value={productNameValue} placeholder="Name"
+                            onchange={handleOnChangeNewProd}></lightning-input>
+                        <lightning-input class="slds-p-top_medium" type="text" name="Product Code" label="Product Code:" value={ProductCodeValue} placeholder="Product Code"
+                            onchange={handleOnChangeNewProd}></lightning-input>
+                        <lightning-input class="slds-p-top_medium" checked={isactive} type="checkbox" label="Active" name="Active"
+                            onchange={handleOnChangeNewProd}></lightning-input>
+                        <lightning-combobox
+                            class="slds-p-top_medium"
+                            name="Currency"
+                            label="Currency"
+                            value={selectedCurrency}
+                            options={currencyOptions}
+                            onchange={handleCurrencyChange}>
+                        </lightning-combobox>
+                        <lightning-input class="slds-p-top_medium" type="number" name="Unit per Cost" label="Unit per Cost:" value={productUPCValue} placeholder="Unit Cost"
+                            onchange={handleOnChangeNewProd} step="0.01" min="0"></lightning-input>
+
+                        <lightning-input class="slds-p-top_medium" type="number" name="Default Quantity" label="Default Quantity:" value={productDQValue}
+                            placeholder="Default Quantity" onchange={handleOnChangeNewProd}></lightning-input>
+
+
+                        <lightning-textarea class="slds-p-top_medium" name="Product Description" label="Product Description:" value={productDescriptionValue}
+                            placeholder="Product Description" onchange={handleOnChangeNewProd}>
+                        </lightning-textarea>
+                    </div>
+                    <div class="modal-right">
+                        <label class="upload-label">Product Image</label>
+                        <template if:true={previewUrl}>
+                            <template if:true={isImage}>
+                                <img src={previewUrl} alt="Preview" style="width: 100%;" />
+                                <div class="slds-p-top_x-small"></div>
+                                <button class="btn-delete" onclick={handleImageRemove}>
+                                    <lightning-icon title="Delete Image" icon-name="utility:delete" alternative-text="Delete" size="xx-small" class="delete-icon"></lightning-icon>
+                                </button>
+                                <!-- <lightning-button-icon icon-name="utility:delete" alternative-text="Delete"
+                                    title="Delete Image" onclick={handleImageRemove}></lightning-button-icon> -->
+                            </template>
+                        </template>
+                        <template if:false={previewUrl}>
+                            <lightning-input type="file" accept=".xlsx, .xls, .csv, .png, .jpg, .jpeg, .gif, .bmp, .pdf" label="Product Image"
+                                onchange={openfileUpload}></lightning-input>
+                        </template>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="newbtn-cancel" onclick={handelOnClickCancelNewProd}>Cancel</button>
+                    <button type="button" class="btn-save" onclick={handleOnClickSaveNewProd}>Save</button>
+                </div>
+            </div>
+        </div>
+    </template>
+    <template if:true={editProdBool}>
+        <div class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">Edit Product</h2>
+                    <lightning-icon class="modal-close" onclick={handelOnClickCancelEditProd} icon-name="utility:close" alternative-text="close" size="x-small" title="close">
+                    </lightning-icon>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-left">
+                        <lightning-input required name="Product Name" label="Product Name:" value={productNameValue} placeholder="Name"
+                            onchange={handleOnChangeEditProd}></lightning-input>
+                        <lightning-input class="slds-p-top_medium" type="text" name="Product Code" label="Product Code:" value={ProductCodeValue} placeholder="Product Code"
+                            onchange={handleOnChangeEditProd}></lightning-input>
+                        <lightning-input class="slds-p-top_medium" checked={isactive} type="checkbox" label="Active" name="Active"
+                            onchange={handleOnChangeEditProd}></lightning-input>
+                        <lightning-input class="slds-p-top_medium" type="text" name="Unit per Cost" label="Unit per Cost:" value={productUPCValue} placeholder="Unit Cost"
+                            onchange={handleOnChangeEditProd}></lightning-input>
+                        <lightning-input class="slds-p-top_medium" type="number" name="Default Quantity" label="Default Quantity:" value={productDQValue}
+                            placeholder="Default Quantity" onchange={handleOnChangeNewProd}></lightning-input>
+                        <lightning-textarea class="slds-p-top_medium" name="Product Description" label="Product Description:" value={productDescriptionValue}
+                            placeholder="Product Description" onchange={handleOnChangeEditProd}>
+                        </lightning-textarea>
+                    </div>
+                    <div class="modal-right">
+                        <label class="upload-label">Product Image</label>
+                        <template if:true={imageAvailable}>
+                            <img src={productImageUrl} alt="Preview" style="width: 100%;" />
+                            <div class="slds-p-top_x-small"></div>
+                            <button class="btn-delete" onclick={handleImageDelete}>
+                                <lightning-icon title="Delete Image" icon-name="utility:delete" alternative-text="Delete" size="xx-small" class="delete-icon"></lightning-icon>
+                            </button>
+                            <!-- <lightning-button-icon icon-name="utility:delete" alternative-text="Delete"
+                                title="Delete Image" onclick={handleImageDelete}></lightning-button-icon> -->
+                        </template>
+                        <template if:false={imageAvailable}>
+                            <lightning-input type="file" class="upload-sec" accept=".xlsx, .xls, .csv, .png, .jpg, .jpeg, .gif, .bmp, .pdf" label="Product Image"
+                                onchange={handleFileChange}></lightning-input>
+                        </template>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="newbtn-cancel" onclick={handelOnClickCancelEditProd}>Cancel</button>
+                    <button type="button" class="btn-save" onclick={handleOnClickSaveEditProd}>Save</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={deleteProductBundleModal}>
+        <div class="modal-backdrop">
+            <div class="confirm-modal">
+                <div class="confirm-header">
+                    <h2 class="confirm-title">Custom Page</h2>
+                    <button title="Close" onclick={deleteProductBundleCancel} class="confirm-close">×</button>
+                </div>
+                <div class="confirm-body">
+                    <p>Are You Sure Delete This Product Bundle?</p>
+                </div>
+                <div class="confirm-footer">
+                    <button class="btn-cancel" onclick={deleteProductBundleCancel}>Cancel</button>
+                    <button class="btn-yes" onclick={handleClickOnDeleteProductBundle}>Yes</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isShowModalNotDelete}>
+        <div class="modal-backdrop">
+            <div class="confirm-modal">
+                <div class="confirm-header">
+                    <h2 class="confirm-title">Product</h2>
+                    <button title="Close" onclick={hidNotDeleteModalBox} class="confirm-close">×</button>
+                </div>
+                <div class="confirm-body">
+                    <p>You cannot delete this Product because it has Product Bundle linked to it.</p>
+                </div>
+                <div class="confirm-footer">
+                    <button class="btn-cancel" onclick={hidNotDeleteModalBox}>Ok</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isImportProductsModalOpen}>
+        <div class="modal-backdrop">
+            <div class="confirm-modal-import-product">
+                <div class="confirm-header">
+                    <h2 class="confirm-title">Import Products</h2>
+                    <button title="Close" onclick={closeImportProductsModal} class="confirm-close">×</button>
+                </div>
+                <div class="confirm-body">
+                    <c-products-import-cmp> </c-products-import-cmp>
+                </div>
+                <div class="confirm-footer">
+                    <button class="btn-cancel" onclick={closeImportProductsModal}>Ok</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isImportProductsBundleModalOpen}>
+        <div class="modal-backdrop">
+            <div class="confirm-modal-import-product">
+                <div class="confirm-header">
+                    <h2 class="confirm-title">Import Products With bundle</h2>
+                    <button title="Close" onclick={closeImportProductsBundleModal} class="confirm-close">×</button>
+                </div>
+                <div class="confirm-body">
+                    <c-products-bundles-import-cmp> </c-products-bundles-import-cmp>
+                </div>
+                <div class="confirm-footer">
+                    <button class="btn-cancel" onclick={closeImportProductsBundleModal}>Ok</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+</template>

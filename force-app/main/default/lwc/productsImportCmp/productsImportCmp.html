@@ -1,0 +1,39 @@
+<template>
+    <div class="slds-p-around_medium">
+
+        <!-- Download CSV Template Button -->
+        <div class="slds-m-bottom_small">
+            <lightning-button variant="success" label="Download Sample Template" onclick={downloadTemplate}>
+            </lightning-button>
+        </div>
+
+        <!-- File Upload -->
+        <lightning-input type="file" label="Upload CSV" accept=".csv" onchange={handleFileChange}>
+        </lightning-input>
+
+        <div class="slds-m-top_small">
+            <lightning-button variant="brand" label="Validate & Preview" onclick={handleValidate} class="slds-m-right_small"></lightning-button>
+            <lightning-button variant="neutral" label="Clear" onclick={handleClear}></lightning-button>
+        </div>
+
+        <!-- Errors -->
+        <template if:true={errorMessage}>
+            <div style="color:red; white-space: pre-line;">
+        {errorMessage}
+    </div>
+        </template>
+
+        <!-- Preview Table -->
+        <template if:true={previewRows.length}>
+            <div class="slds-m-top_medium">
+                <lightning-datatable key-field="_rowIndex" data={previewRows} columns={columns} hide-checkbox-column>
+                </lightning-datatable>
+
+                <div class="slds-m-top_small">
+                    <lightning-button variant="brand" label="Import to Salesforce" onclick={handleImport}></lightning-button>
+                </div>
+            </div>
+        </template>
+
+    </div>
+</template>

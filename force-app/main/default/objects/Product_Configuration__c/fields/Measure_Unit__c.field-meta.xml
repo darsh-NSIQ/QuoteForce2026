@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Measure_Unit__c</fullName>
+    <label>Measure Unit</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>kg</fullName>
+                <default>false</default>
+                <label>kg</label>
+            </value>
+            <value>
+                <fullName>meter</fullName>
+                <default>false</default>
+                <label>meter</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

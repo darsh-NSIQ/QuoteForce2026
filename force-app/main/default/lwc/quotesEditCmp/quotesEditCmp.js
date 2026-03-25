@@ -1,0 +1,1943 @@
+import { LightningElement, track, api, wire } from 'lwc';
+import CreateMasterLayout from '@salesforce/apex/createMasterTemplateRecord.CreateMasterLayout';
+import CreateCustomPage from '@salesforce/apex/createMasterTemplateRecord.CreateCustomPage';
+import updateCustomPage from '@salesforce/apex/createMasterTemplateRecord.updateCustomPage';
+import uploadBulkFiles from '@salesforce/apex/createMasterTemplateRecord.uploadBulkFiles';
+import getLayoutRecord from '@salesforce/apex/createMasterTemplateRecord.getLayoutRecord';
+import updateQuoteDetails from '@salesforce/apex/createMasterTemplateRecord.updateQuoteDetails';
+import getCustomPage from '@salesforce/apex/createMasterTemplateRecord.getCustomPageQuote';
+import UpdateMasterLayout from '@salesforce/apex/createMasterTemplateRecord.UpdateMasterLayout';
+import deleteFile from '@salesforce/apex/createMasterTemplateRecord.deleteFile';
+import deleteLayoutPage from '@salesforce/apex/createMasterTemplateRecord.deleteLayoutPage';
+import deleteQuoteFile from '@salesforce/apex/createMasterTemplateRecord.deleteQuoteFile';
+import uploadFile from '@salesforce/apex/createMasterTemplateRecord.uploadFileQuote';
+import getLayouts from '@salesforce/apex/createMasterTemplateRecord.getLayouts';
+import getQuoteDetails from '@salesforce/apex/createMasterTemplateRecord.getQuoteDetails';
+import attachDocsToQuote from '@salesforce/apex/createMasterTemplateRecord.attachDocsToQuote';
+import getQuoteDocumentLinks from '@salesforce/apex/createMasterTemplateRecord.getQuoteDocumentLinks';
+import SectionUpdate from '@salesforce/apex/ProductConfigurationController.SectionUpdate';
+import SectionDeleteCancel from '@salesforce/apex/ProductConfigurationController.SectionDeleteCancel';
+
+import saveImageUrl from '@salesforce/apex/createMasterTemplateRecord.saveImageUrl';
+
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { refreshApex } from '@salesforce/apex';
+export default class QuotesEditCmp extends LightningElement {
+
+
+    //@api isEditMode = false;
+
+    // to get the uploaded document URL
+    @track uploadedDocUrls = {
+        primaryDocUrl: undefined,
+        secondaryDocUrl: undefined,
+        warrantyDocUrl: undefined,
+        termConditionDocUrl: undefined,
+        customPageDocUrl: undefined
+    }
+
+    @track uploadedDocumentList = [];
+
+    @track isDocAvailable = {
+        primaryImageAvl: false,
+        secondaryImageAvl: false,
+        warrantyImageAvl: false,
+        termConditionImageAvl: false,
+        customPageImageAvl: false
+    }
+
+    @track contentDocId = {
+        primaryDocId: undefined,
+        secondaryDocId: undefined,
+        warrantyDocId: undefined,
+        termConDocId: undefined,
+        customPageDocId: undefined
+    }
+
+    @track ElementList = [
+        {
+            Id: 1,
+            Name: 'Title',
+            label: 'Title',
+            selected: true,
+            editMode: false,
+            toggle: false
+        },
+        {
+            Id: 2,
+            Name: 'Letter from the owner',
+            label: 'Letter from the owner',
+            selected: false,
+            editMode: false,
+            toggle: false
+        },
+        {
+            Id: 3,
+            Name: 'Quote Details',
+            label: 'Quote Details',
+            selected: false,
+            editMode: false,
+            toggle: false
+        },
+        {
+            Id: 4,
+            Name: 'Warranty',
+            label: 'Warranty',
+            selected: false,
+            editMode: false,
+            toggle: false
+        },
+        {
+            Id: 5,
+            Name: 'Terms and Conditions',
+            label: 'Terms and Conditions',
+            selected: false,
+            editMode: false,
+            toggle: false
+        }
+    ];
+
+    editCustomPageName = false;
+    titleViewPageModel = false;
+    LetterFromTheOwnerModel = false;
+    QuoteDetailModel = false;
+    primaryImage;
+    clickCount = 0;
+    secondaryImage;
+    fileDataPrimary;
+    currentSelectedCustomPage = {};
+    currentCustomPageRecordId = '';
+    fileTypes = ['.jpg', '.png', '.jpeg'];
+    loaded = false;
+
+    @track dataPageName = 'Title';
+    @api templateId;
+    @api CreatedDate;
+    @api recordId;
+    @api quoteId;
+    @api mode;
+    @api isFromQuote = false;
+    @track cDate;
+    @track layout__Name;
+    @track pageLabel = '';
+    @track loaded = false;
+    @track titlePageSelected = true;
+    @track latterFormTheOwnerPageSelected = false;
+    @track quoteDetailPageSelected = false;
+    @track WarrantyPageSelected = false;
+    @track TermsAndConditionPageSelected = false;
+    @track customePage = false;
+    @track fieldValues = {};
+    @track letterForm = '';
+    @track zipCode = '';
+    @track stateProvince = '';
+    @track city = '';
+    @track streetAddress = '';
+    @track lastName = '';
+    @track firstName = '';
+    @track CreatedDate = '';
+    @track primaryImage = '';
+    @track secondaryImage = '';
+    @track PrimaryUploadedFilesUrl = [];
+    @track reportType;
+    @track CreatedDate;
+    @track contactId;
+    @track FirstName;
+    @track LastName;
+    @track Street_Address;
+    @track City;
+    @track State;
+    @track Zip;
+    @track wiredLayoutsResult;
+    @track editBoolPages = false;
+    @track valLetterFromTheOwner = 'letter from the owner';
+    @track valTitle = 'Title';
+    @track myVal = 'Initial rich text content';
+    @track valQuoteDetails = 'QuoteDetails';
+    @track InspectionImagesList = [];
+    @track isInsert = false;
+    warrantyUrl = '';
+    @track currencyType = '';
+
+    currencyOptions = [
+        { label: 'USD ($)', value: 'USD' },
+        { label: 'INR (Rs)', value: 'INR' },
+        { label: 'EUR (EUR)', value: 'EUR' },
+        { label: 'GBP (GBP)', value: 'GBP' }
+    ];
+    warrantyImageBase64
+    termAndConditionUrl = '';
+
+    connectedCallback() {
+        this.loaded = true;
+        console.log('mode : ', this.mode);
+        console.log('this.recordId--- : ', this.recordId);
+        console.log('this.quoteId : ', this.quoteId);
+
+        // if (this.recordId == '') {
+        //     this.isInsert = true;
+        //     this.loaded = false;
+        // }
+
+        // if (this.recordId && this.recordId !== '') {
+        //     // if (this.quoteId && this.quoteId !== '' && this.mode == true) {
+        //     //     // Editing an existing quote
+        //     //     this.loadLayouts();
+        //     //     this.fetchQuoteDocumentsOnly();
+        //     // } else {
+        //     this.loadLayouts();
+        //     this.fetchUploadedMasterTemplateDocs();
+        //     // }
+        // } else {
+        //     this.loadConfig();
+        // }
+        
+
+        if (this.quoteId && this.quoteId !== '') {
+
+            setTimeout(() => {
+                this.getQuoteDetailsFromApex();
+                this.loaded = false;
+            }, 3000);
+
+
+        }
+    }
+
+    // warrantyUrl = '';
+    // termAndConditionUrl = '';
+
+getQuoteDetailsFromApex() {
+    this.loaded = true;
+
+    getQuoteDetails({ recordId: this.quoteId })
+        .then(result => {
+            console.log('Quote details from child lwc----- :', JSON.stringify(result));
+
+            if (result) {
+                this.firstName = result.First_Name__c;
+                this.lastName = result.Last_Name__c;
+                this.streetAddress = result.Street_Address__c;
+                this.city = result.City__c;
+                this.stateProvince = result.State_Province__c;
+                this.zipCode = result.Zip_code_Postal_code__c;
+                this.CreatedDate = result.Date__c;
+                this.reportType = result.reportType;
+                this.letterForm = result.Letter_from_the_owner__c;
+                this.currencyType = result.Currency__c;
+
+                // Safe JSON parsing
+                this.ElementList = result.Pages_JSON__c
+                    ? JSON.parse(result.Pages_JSON__c)
+                    : this.ElementList;
+
+                /* ---------------- WARRANTY IMAGE LOGIC ---------------- */
+
+                const warrantyPage = this.ElementList.find(p => p.label === 'Warranty');
+
+                if (!warrantyPage || warrantyPage.warrantyImage === undefined) {
+                    // Template default image
+                    this.warrantyUrl = result.Warranty__c;
+
+                } else if (warrantyPage.warrantyImage === null) {
+                    // User deleted image
+                    this.warrantyUrl = null;
+
+                } else {
+                    // User uploaded new image
+                    this.warrantyUrl = warrantyPage.warrantyImage;
+                }
+
+                /* ------------- TERMS & CONDITIONS IMAGE LOGIC ---------- */
+
+                const termPage = this.ElementList.find(p => p.label === 'Terms and Conditions');
+
+                if (!termPage || termPage.termConditionImage === undefined) {
+                    // Template default image
+                    this.termAndConditionUrl = result.Terms_Conditions__c;
+
+                } else if (termPage.termConditionImage === null) {
+                    // User deleted image
+                    this.termAndConditionUrl = null;
+
+                } else {
+                    // User uploaded new image
+                    this.termAndConditionUrl = termPage.termConditionImage;
+                }
+
+                /* -------------------------------------------------------- */
+
+                this.layout__Name = result.Layout_Name__c;
+                this.primaryImageUrl = result.Primary_Image__c;
+                this.secondaryImageUrl = result.Secondary_Image__c;
+
+                this.ElementList.forEach(page => {
+                    if (page.label === 'Title') {
+                        page.selected = true;
+                        this.pageLabel = page.label;
+                    } else {
+                        page.selected = false;
+                    }
+                });
+
+                this.dataPageName = this.ElementList[0].Name;
+            }
+
+            this.loaded = false;
+        })
+        .catch(error => {
+            this.loaded = false;
+            console.error('Error fetching quote details:', error);
+        });
+}
+
+    @wire(getLayouts)
+    wiredLayouts(result) {
+        this.wiredLayoutsResult = result;
+        if (result.data) {
+            this.layouts = result.data;
+            this.hasError = false;
+        } else if (result.error) {
+            this.hasError = true;
+            this.showToast('Error', 'Failed to load layouts', 'error');
+        }
+    }
+
+    @api
+    async refreshLayouts() {
+        try {
+            await refreshApex(this.wiredLayoutsResult);
+        } catch (error) {
+            this.showToast('Error', 'Failed to refresh layout list', 'error');
+        }
+    }
+
+    /* handleOnChangeInputFields(event) {
+            let label = event.target.label;
+            let value = event.target.value;
+    
+            if (label == 'Layout Name') {
+                this.reportType = value;
+            } else if (label == 'Letter From The Owner') {
+                this.letterForm = value;
+    
+            } else if (label == 'Zip code/Postal code') {
+                this.zipCode = value;
+            } else if (label == 'State/Province') {
+                this.stateProvince = value;
+            } else if (label == 'City') {
+                this.city = value;
+            } else if (label == 'Street Address') {
+                this.streetAddress = value;
+            } else if (label == 'Last Name') {
+                this.lastName = value;
+            } else if (label == 'First Name') {
+                this.firstName = value;
+            } else if (label == 'Date') {
+                this.CreatedDate = value;
+            } else if (label == 'Primary Image') {
+                this.primaryImage = value;
+            } else if (label == 'Secondary Image') {
+                this.secondaryImage = value;
+            }
+        }*/
+
+
+
+
+    // loadLayouts() {
+    //     getLayoutRecord({ mtId: this.recordId })
+    //         .then(result => {
+    //             console.log('result-- : ', result);
+    //             this.reportType = result.Layout_Name__c;
+    //             console.log('this.reportType : ', this.reportType);
+    //             this.letterForm = result.Letter_from_the_owner__c;
+    //             this.zipCode = result.Zip_code_Postal_code__c;
+    //             this.stateProvince = result.State_Province__c;
+    //             this.city = result.City__c;
+    //             this.streetAddress = result.Street_Address__c;
+    //             this.lastName = result.Last_Name__c;
+    //             this.firstName = result.First_Name__c;
+    //             this.CreatedDate = result.Date__c;
+    //             this.primaryImage = result.Primary_Image__c;
+    //             this.secondaryImage = result.Secondary_Image__c;
+    //             this.termAndConditionUrl = result.Terms_Condition_doc__c;
+    //             this.warrantyUrl = result.Warranty_Doc__c;
+    //             this.layoutRecord = result;
+
+    //             if (result.Pages_JSON__c) {
+    //                 console.log('result.Pages_JSON__c : ', result.Pages_JSON__c);
+    //                 this.ElementList = JSON.parse(result.Pages_JSON__c);
+    //                 this.ElementList.forEach(result => {
+    //                     if (result.label == 'Title') {
+    //                         result.selected = true;
+
+    //                         this.pageLabel = result.label;
+    //                     } else {
+    //                         result.selected = false;
+    //                     }
+    //                 });
+    //                 this.dataPageName = this.ElementList[0].Name;
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error('Error loading layouts:', error);
+    //         });
+
+    //     getCustomPage({ recordId: this.recordId })
+    //         .then(result => {
+
+    //             console.log('## 1, custom page result: ', result);
+
+    //             result.forEach(element => {
+    //                 this.clickCount++;
+    //                 // let newElement = {
+    //                 //     Id: element.Id,
+    //                 //     Name: element.Name,
+    //                 //     label: element.label__c,
+    //                 //     selected: false,
+    //                 //     editMode: element.editMode__c,
+    //                 //     toggle: element.toggle__c,
+    //                 //     contentDocument: element?.ContentDocumentLinks,
+    //                 //     richTextValue: element.Text_Page__c
+    //                 // };
+    //                 // this.ElementList.push(newElement);
+    //             });
+
+    //         })
+    //         .catch(error => {
+    //             console.error('Error loading layouts:', error);
+    //         });
+    // }
+
+    handleAddCustomPage(event) {
+        this.clickCount++;
+
+        // this.titlePageSelected = false;
+        // this.latterFormTheOwnerPageSelected = false;
+        // this.quoteDetailPageSelected = false;
+        // this.WarrantyPageSelected = false;
+        // this.TermsAndConditionPageSelected = false;
+        // this.customePage = true;
+
+        // this.ElementList.forEach(currentItem => {
+        //     currentItem.selected = false;
+        // });
+
+        // this.ElementList = this.ElementList.map(item => {
+        //     for (let i = 1; i < this.clickCount; i++) {
+        //         if (item.label === 'Custom Page ' + i + 1) {
+        //             item.selected = true;
+        //         } else {
+        //             item.selected = false;
+        //         }
+        //     }
+        //     return item;
+        // });
+
+        let customObj = {
+            'Name': `Custom Page`,
+            'label__c': `Custom Page ${this.clickCount}`,
+            'selected__c': false,
+            'editMode__c': false,
+            'toggle__c': false,
+            'Quotes__c': this.quoteid
+        };
+
+        CreateCustomPage({ customObj: customObj })
+            .then(result => {
+                let newElement = {
+                    Id: result.Id,
+                    Name: `Custom Page`,
+                    label: `Custom Page ${this.clickCount}`,
+                    selected: false,
+                    editMode: false,
+                    toggle: false
+                };
+                getCustomPage({ recordId: this.quoteid })
+                    .then(result => {
+                        console.log('## 2. custom page result: ', result);
+                        result.forEach(element => {
+                            if (element.Id == this.currentCustomPageRecordId) {
+                                this.ctmPgType = element.Type__c;
+                                console.log('## element type: ', element.Type__c);
+                                if (element.Type__c === 'Upload File') {
+                                    this.customPageUploadFile = true;
+                                    this.customPageTextPage = false;
+                                } else if (element.Type__c === 'Text Page') {
+                                    this.customPageUploadFile = false;
+                                    this.customPageTextPage = true;
+                                } else {
+                                    this.customPageUploadFile = false;
+                                    this.customPageTextPage = false;
+                                }
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading layouts:', error);
+                    });
+                this.ElementList.push(newElement);
+                // getCustomPage({ recordId: this.recordId })
+                //     .then(result => {
+                //         console.log('## custom page result: ', result);
+                //         result.forEach(element => {
+                //             if (element.Id == this.currentCustomPageRecordId) {
+                //                 this.ctmPgType = '';
+
+                //                 this.customPageUploadFile = false;
+                //                 this.customPageTextPage = false;
+
+                //             }
+                //         });
+                //     })
+                //     .catch(error => {
+                //     console.error('Error loading layouts:', error);
+                // });
+            })
+            .catch(error => {
+                this.showToast('Error', 'Error Creating Record: ' + error.body.message, 'error');
+            });
+    }
+
+    handleChangeToggle(event) {
+        this.loaded = true;
+        var dataLabel = event.currentTarget.dataset.label;
+        this.ElementList.forEach(result => {
+            if (result.label === dataLabel) {
+                result.toggle = event.target.checked;
+                this.loaded = false;
+            }
+        })
+        this.pageLabel = dataLabel;
+    }
+
+
+    handleClickPages(event) {
+        let dataLabel = event.currentTarget.dataset.label;
+        this.dataPageName = event.currentTarget.dataset.page;
+        this.currentCustomPageRecordId = event.currentTarget.dataset.recid;
+
+        this.toggleLabel = event.currentTarget.dataset.label;
+        this.titlePageSelected = (dataLabel == 'Title') ? true : false;
+        this.latterFormTheOwnerPageSelected = (dataLabel == 'Letter from the owner') ? true : false;
+        this.quoteDetailPageSelected = (dataLabel == 'Quote Details') ? true : false;
+        this.WarrantyPageSelected = (dataLabel == 'Warranty') ? true : false;
+        this.TermsAndConditionPageSelected = (dataLabel == 'Terms and Conditions') ? true : false;
+        this.customePage = dataLabel.includes("Custom Page") ? true : false;
+
+        this.ElementList.forEach(result => {
+            if (result.label == dataLabel) {
+                result.selected = true;
+                this.pageLabel = result.label;
+            } else {
+                result.selected = false;
+            }
+        });
+
+        if (this.quoteDetailPageSelected == true) {
+            const childCmp = this.template.querySelector('c-quote-edit-detail-cmp');
+            if (childCmp) {
+                childCmp.loadSectionData();
+            }
+        }
+
+        console.log('OUTPUT : ', JSON.stringify(dataLabel));
+
+        if (JSON.stringify(dataLabel).includes("Custom Page")) {
+            getCustomPage({ recordId: this.quoteid })
+                .then(result => {
+                    console.log('## 2. custom page result: ', result);
+                    result.forEach(element => {
+                        if (element.Id == this.currentCustomPageRecordId) {
+                            this.ctmPgType = element.Type__c;
+                            console.log('## element type: ', element.Type__c);
+                            if (element.Type__c === 'Upload File') {
+                                this.customPageUploadFile = true;
+                                this.customPageTextPage = false;
+                            } else if (element.Type__c === 'Text Page') {
+                                this.customPageUploadFile = false;
+                                this.customPageTextPage = true;
+                            } else {
+                                this.customPageUploadFile = false;
+                                this.customPageTextPage = false;
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading layouts:', error);
+                });
+        }
+
+
+
+        // finding the data of the selected page
+        this.currentSelectedCustomPage = this.ElementList.find(ele => ele.Id === this.currentCustomPageRecordId);
+
+        if (this.currentSelectedCustomPage) {
+            const ele = this.currentSelectedCustomPage;
+            const imageUrl = ele.customPageDocUrl;
+            const imageTitle = ele?.ContentDocument?.Title;
+            const conDoctId = ele?.ContentDocumentId;
+
+            if (imageTitle === 'customPageDoc') {
+                ele.customPageDocUrl = imageUrl;
+                ele.customPageImageAvl = true;
+                // ele.customPageDocId = conDoctId; // uncomment if needed
+            }
+        }
+
+        console.log('## page value: ', JSON.stringify(this.currentSelectedCustomPage));
+    }
+
+    handleInputFieldsChange(event) {
+        const field = event.target.dataset.field;
+        this[field] = event.target.value;
+    }
+
+    handleDateFieldsChange(event) {
+        this.CreatedDate = event.target.value;
+    }
+
+    handleRichInputFieldsChange(event) {
+        this.letterForm = event.target.value;
+        console.log('letterForm : ', this.letterForm);
+    }
+
+
+    @api updateQuote(newQuoteId) { 
+    // Agar Parent ne naya ID diya toh wo lo, warna apna purana quoteId lo
+    const targetId = newQuoteId ? newQuoteId : this.quoteId;
+
+    updateQuoteDetails({
+        quoteId: targetId, // Ab ye naye record pe save karega
+        firstName: this.firstName,
+        lastName: this.lastName,
+        streetAddress: this.streetAddress,
+        city: this.city,
+        stateProvince: this.stateProvince,
+        zipCode: this.zipCode,
+        CreatedDate: this.CreatedDate,
+        layoutName: this.layout__Name,
+        letterForm: this.letterForm,
+        pagesJSON: JSON.stringify(this.ElementList),
+        currencyType: this.currencyType
+    })
+    .then((result) => {
+        this.showToast('Success', 'Saved successfully!', 'success');
+        
+        // Naye record par redirect
+        const baseUrl = window.location.origin;
+        const redirectUrl = `${baseUrl}/lightning/r/Quotes__c/${targetId}/view`;
+        window.top.location.href = redirectUrl;
+    })
+    .catch(error => {
+        console.error('Error', error);
+        this.showToast('Error', 'Save failed', 'error');
+    });
+}
+    handleChangeContact(event) {
+        this.contactId = event.target.value;
+    }
+
+    handleClickEditIcon() {
+        this.editBoolPages = true;
+    }
+
+    handleChangePagesName(event) {
+        var lab = event.target.label;
+        this.dataPageName = event.target.value;
+        console.log('Label On Change  - - - - :', lab);
+        this.ElementList.forEach(item => {
+            if (event.target.label === item.label) {
+                item.Name = event.target.value;
+            }
+        });
+
+        if (event.target.label === 'Letter from the owner') {
+            this.valLetterFromTheOwner = event.target.value;
+        } else if (event.target.label === 'QuoteDetails') {
+            this.valAuthorizationPage = event.target.value;
+        } else if (event.target.label === 'QuoteDetails') {
+            this.valQuoteDetails = event.target.value;
+        } else if (event.target.label === 'Warranty') {
+            this.valWarranty = event.target.value;
+        } else if (event.target.label === 'Title') {
+            this.valTitle = event.target.value;
+        }
+    }
+
+
+    handleSavePagesName() {
+        this.editBoolPages = false;
+        // this.handleSaveAdditionalDocument();
+    }
+
+
+
+    handleTitleViewPageClick() {
+        this.titleViewPageModel = true;
+    }
+    handleLaterFromOwnerClick() {
+        this.LetterFromTheOwnerModel = true;
+    }
+    handleQuoteDetailsClick() {
+        this.QuoteDetailModel = true;
+    }
+
+    closeModal() {
+        if (this.titleViewPageModel == true) {
+            this.titleViewPageModel = false;
+        }
+        if (this.LetterFromTheOwnerModel == true) {
+            this.LetterFromTheOwnerModel = false;
+        }
+        if (this.QuoteDetailModel == true) {
+            this.QuoteDetailModel = false;
+        }
+        if (this.sqrc == true) {
+            this.sqrc = false;
+        }
+        if (this.warrantyModalBool == true) {
+            this.warrantyModalBool = false;
+        }
+        if (this.GLCertificatePreviewModel == true) {
+            this.GLCertificatePreviewModel = false;
+        }
+        if (this.hearthModePreview == true) {
+            this.hearthModePreview = false;
+        }
+        if (this.HVAC_ModePreview == true) {
+            this.HVAC_ModePreview = false;
+        }
+        this.ConfirmationIsShowModal = false;
+        this.isShowViewModal = false;
+        this.isShowDeleteModal = false;
+        this.isShowViewModalPDF = false;
+
+        SectionDeleteCancel()
+            .then(data => {
+                console.log('data : ', data);
+            })
+            .catch(err => {
+                console.error('[loadSectionData] Error:', err);
+            });
+    }
+
+
+    handleInspectionViewPageClick() {
+        this.InspectionModel = true;
+    }
+
+    updateInspectionRecord() {
+        updateInspectionImage({ imageList: this.InspectionImagesList })
+            .then(result => {
+                this.inspectionImages(this.estimateId);
+            })
+            .catch(error => {
+            });
+    }
+
+    recordName = '';
+    optionCount = 3;
+    customPageTextPage = false;
+    customPageUploadFile = false;
+    @track ctmPgType = '';
+
+    radioOptions = [
+        { label: 'Upload File', value: 'Upload File' },
+        { label: 'Text Page', value: 'Text Page' }
+    ];
+
+    handleRadioChange(event) {
+        var Value = event.detail.value;
+        this.ctmPgType = Value;
+        if (Value === 'Upload File') {
+            this.customPageUploadFile = true;
+            this.customPageTextPage = false;
+        } else if (Value === 'Text Page') {
+            this.customPageUploadFile = false;
+            this.customPageTextPage = true;
+        }
+
+        var customObj = {
+            'Id': this.currentCustomPageRecordId,
+            'Type__c': Value
+        };
+
+        updateCustomPage({ customObj: customObj })
+            .then(result => {
+                console.log(result);
+            })
+            .catch(error => {
+                console.log(JSON.stringify(error));
+                this.showToast('Error', 'Error Creating Record: ' + error.body.message, 'error');
+            });
+    }
+
+    handleInputChange(event) {
+        this.recordName = event.target.value;
+    }
+
+    addNewOption() {
+        if (this.recordName) {
+            this.optionCount += 1;
+            const newOption = {
+                label: this.recordName,
+                value: `option${this.optionCount}`
+            };
+
+            this.radioOptions = [...this.radioOptions, newOption];
+            this.recordName = '';
+        } else {
+            console.error('Record name is required.');
+        }
+    }
+
+    // @api handleSaveTeamplate() {
+
+    //     if (!this.reportType) {
+    //         this.showToast('Error', 'Layout Name is required', 'error');
+    //         return;
+    //     }
+
+
+    //     console.log('mstTmpObj  : ', mstTmpObj);
+
+    //     if (this.recordId) {
+
+    //         var mstTmpObj = {
+    //             'Id': this.recordId,
+    //             'Layout_Name__c': this.reportType,
+    //             'Letter_from_the_owner__c': this.letterForm,
+    //             'Zip_code_Postal_code__c': this.zipCode,
+    //             'State_Province__c': this.stateProvince,
+    //             'City__c': this.city,
+    //             'Street_Address__c': this.streetAddress,
+    //             'Last_Name__c': this.lastName,
+    //             'First_Name__c': this.firstName,
+    //             'Date__c': this.CreatedDate,
+    //             'Primary_Image__c': this.primaryImage,
+    //             'Secondary_Image__c': this.secondaryImage,
+    //             'Pages_JSON__c': JSON.stringify(this.ElementList)
+    //         };
+
+    //         UpdateMasterLayout({ mstLayoutObj: mstTmpObj })
+    //             .then(result => {
+    //                 this.showToast('Success', 'Record Updated Successfully!', 'success');
+    //                 this.uploadBulkFilesSF(result.Id);
+    //                 this.dispatchEvent(new CustomEvent('save'));
+    //                 this.closeModal();
+    //                 this.refreshLayouts();
+    //                 this.showToast('Success', 'Record Updated Successfully!', 'success');
+    //                 this.dispatchEvent(new CustomEvent('closemodal'));
+    //             })
+    //             .catch(error => {
+    //                 this.showToast('Error', 'Failed to update record', 'error');
+    //             });
+
+    //     } else {
+    //         var mstTmpObj = {
+    //             'Layout_Name__c': this.reportType,
+    //             'Letter_from_the_owner__c': this.letterForm,
+    //             'Zip_code_Postal_code__c': this.zipCode,
+    //             'State_Province__c': this.stateProvince,
+    //             'City__c': this.city,
+    //             'Street_Address__c': this.streetAddress,
+    //             'Last_Name__c': this.lastName,
+    //             'First_Name__c': this.firstName,
+    //             'Date__c': this.CreatedDate,
+    //             'Primary_Image__c': this.primaryImage,
+    //             'Secondary_Image__c': this.secondaryImage,
+    //             'Pages_JSON__c': JSON.stringify(this.ElementList)
+    //         };
+
+    //         CreateMasterLayout({ mstLayoutObj: mstTmpObj })
+    //             .then(result => {
+
+    //                 this.recordId = result.Id;
+    //                 this.uploadBulkFilesSF(result.Id);
+    //                 this.showToast('Success', 'Record Created Successfully!', 'success');
+
+    //                 this.dispatchEvent(new CustomEvent('edit', { detail: { recordId: this.recordId } }));
+    //                 this.dispatchEvent(new CustomEvent('save'));
+    //                 this.dispatchEvent(new CustomEvent('closemodal'));
+    //                 this.refreshLayouts();
+    //                 this.ElementList.forEach(item => {
+    //                     if (item.Name === 'Custom Page') {
+    //                         console.log('item - - - - :', JSON.stringify(item));
+    //                         var customObj = {
+    //                             'Id': item.Id,
+    //                             'Master_Template__c': this.recordId
+    //                         };
+
+    //                         updateCustomPage({ customObj: customObj })
+    //                             .then(result => {
+    //                                 console.log(result);
+    //                             })
+    //                             .catch(error => {
+    //                                 console.log(JSON.stringify(error));
+    //                                 this.showToast('Error', 'Error Creating Record: ' + error.body.message, 'error');
+    //                             });
+
+    //                     }
+    //                 });
+    //             })
+    //             .catch(error => {
+    //                 console.log('error while creating record: ', JSON.stringify(error));
+    //                 this.showToast('Error', 'Error Creating Record: ' + error.body.message, 'error');
+    //             });
+    //     }
+    // }
+
+    @api
+    async handleSaveTeamplate() {
+        if (!this.reportType) {
+            this.showToast('Error', 'Layout Name is required', 'error');
+            return;
+        }
+
+        try {
+            // Fetch existing layouts
+            const layouts = await getLayouts();
+
+            // For update: exclude current record from duplicate check
+            const isDuplicate = layouts.some(layout =>
+                layout.Layout_Name__c === this.reportType &&
+                layout.Id !== this.recordId // ignore current record when updating
+            );
+
+            if (isDuplicate) {
+                this.showToast('Error', `Layout with name "${this.reportType}" already exists. Cannot create duplicate.`, 'error');
+                return;
+            }
+            if (this.recordId) {
+
+                var mstTmpObj = {
+                    'Id': this.recordId,
+                    'Layout_Name__c': this.reportType,
+                    'Letter_from_the_owner__c': this.letterForm,
+                    'Zip_code_Postal_code__c': this.zipCode,
+                    'State_Province__c': this.stateProvince,
+                    'City__c': this.city,
+                    'Street_Address__c': this.streetAddress,
+                    'Last_Name__c': this.lastName,
+                    'First_Name__c': this.firstName,
+                    'Date__c': this.CreatedDate,
+                    'Primary_Image__c': this.primaryImage,
+                    'Secondary_Image__c': this.secondaryImage,
+                    'Pages_JSON__c': JSON.stringify(this.ElementList),
+                    'Terms_Condition_doc__c': this.termAndConditionUrl,
+                    'Warranty_Doc__c': this.warrantyUrl
+                };
+
+                UpdateMasterLayout({ mstLayoutObj: mstTmpObj })
+                    .then(result => {
+                        this.showToast('Success', 'Record Updated Successfully!', 'success');
+                        this.uploadBulkFilesSF(result.Id);
+                        this.dispatchEvent(new CustomEvent('save'));
+                        this.closeModal();
+                        this.refreshLayouts();
+                        this.dispatchEvent(new CustomEvent('closemodal'));
+                    })
+                    .catch(error => {
+                        this.showToast('Error', 'Failed to update record', 'error');
+                    });
+
+            } else {
+                var mstTmpObj = {
+                    'Layout_Name__c': this.reportType,
+                    'Letter_from_the_owner__c': this.letterForm,
+                    'Zip_code_Postal_code__c': this.zipCode,
+                    'State_Province__c': this.stateProvince,
+                    'City__c': this.city,
+                    'Street_Address__c': this.streetAddress,
+                    'Last_Name__c': this.lastName,
+                    'First_Name__c': this.firstName,
+                    'Date__c': this.CreatedDate,
+                    'Primary_Image__c': this.primaryImage,
+                    'Secondary_Image__c': this.secondaryImage,
+                    'Pages_JSON__c': JSON.stringify(this.ElementList),
+                    'Terms_Condition_doc__c': this.termAndConditionUrl,
+                    'Warranty_Doc__c': this.warrantyUrl
+                };
+                CreateMasterLayout({ mstLayoutObj: mstTmpObj })
+                    .then(result => {
+                        this.recordId = result.Id;
+                        this.uploadBulkFilesSF(result.Id);
+                        // if (this.PrimaryAvailableBool && this.fileDataPrimary) {
+                        //     this.handleClickPrimary(result.Id);
+                        // }
+                        // if (this.SecondaryAvailableBool && this.fileDataSecondary) {
+                        //     this.handleClickSecondary(result.Id);
+                        // }
+                        this.dispatchEvent(new CustomEvent('edit', { detail: { recordId: this.recordId } }));
+                        this.dispatchEvent(new CustomEvent('save'));
+                        this.dispatchEvent(new CustomEvent('closemodal'));
+                        this.refreshLayouts();
+                        SectionUpdate({ quoteId: this.recordId })
+                            .then(data => {
+                                console.log('data : ', data);
+                            })
+                            .catch(err => {
+                                console.error('[loadSectionData] Error:', err);
+                            });
+                        this.ElementList.forEach(item => {
+                            if (item.Name === 'Custom Page') {
+                                console.log('item - - - - :', JSON.stringify(item));
+                                var customObj = {
+                                    'Id': item.Id,
+                                    'Master_Template__c': this.recordId
+                                };
+                                updateCustomPage({ customObj: customObj })
+                                    .then(result => {
+                                        console.log(result);
+                                    })
+                                    .catch(error => {
+                                        console.log(JSON.stringify(error));
+                                        this.showToast('Error', 'Error Creating Record: ' + error.body.message, 'error');
+                                    });
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.log('error while creating record: ', JSON.stringify(error));
+                        this.showToast('Error', 'Error Creating Record: ' + error.body.message, 'error');
+                    });
+            }
+        } catch (error) {
+            console.error(error);
+            this.showToast('Error', 'An unexpected error occurred: ' + error.body?.message || error.message, 'error');
+        }
+    }
+
+    showToast(title, message, variant) {
+        const event = new ShowToastEvent({
+            title: title,
+            message: message,
+            variant: variant,
+        });
+        this.dispatchEvent(event);
+    }
+
+    /*
+    * Created on Thu Jan 23 2025
+    * Description: function to upload file in th master-template object
+    * Created by: Shubham Sen
+    * Copyright (c) 2025 NSIQ infotech pvt. ltd.
+    */
+
+
+    // function to upload all the images - in working
+    handleUploadDocuments(event) {
+        try {
+            let docType = event.target.name;
+
+            if (event.target.files.length > 0) {
+                const file = event.target.files[0];
+                const fileUrl = URL.createObjectURL(file);
+
+                var reader = new FileReader();
+                reader.onload = () => {
+                    var base64 = reader.result.split(',')[1];
+
+                    let tempObj = {
+                        'filename': docType,
+                        'base64': base64,
+                        'quoteId': ((this.currentCustomPageRecordId)?.length > 15) ? this.currentCustomPageRecordId : this.quoteId
+                    };
+
+                    this.uploadedDocumentList.push(tempObj);
+
+                    // Call Apex to actually upload the file
+                    uploadFile({
+                        base64Data: base64,
+                        fileName: docType,
+                        parentId: tempObj.quoteId
+                    })
+                        .then(result => {
+                            console.log('File uploaded successfully. ContentDocumentId: ' + result);
+                            // You can store ContentDocumentId if needed
+                            console.log('File uploaded successfully. IDs: ', result);
+
+                            // ✅ Build proper preview URL from latestVersionId (068)
+                            let previewUrl = `/sfc/servlet.shepherd/version/download/${result.latestVersionId}`;
+
+                            // If this is customPageDoc update the record
+                            if (docType === 'customPageDoc') {
+                                if (this.currentCustomPageRecordId?.length > 15) {
+                                    this.currentSelectedCustomPage.customPageDocUrl = previewUrl;
+                                    this.currentSelectedCustomPage.customPageImageAvl = true;
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error uploading file', error);
+                        });
+
+                    // // setting preview
+                    // if (docType == 'primaryDoc') {
+                    //     this.uploadedDocUrls.primaryDocUrl = fileUrl;
+                    //     this.isDocAvailable.primaryImageAvl = true;
+                    // } else if (docType == 'SecondaryDoc') {
+                    //     this.uploadedDocUrls.secondaryDocUrl = fileUrl;
+                    //     this.isDocAvailable.secondaryImageAvl = true;
+                    // } else if (docType == 'TermConditionDoc') {
+                    //     this.uploadedDocUrls.termConditionDocUrl = fileUrl;
+                    //     this.isDocAvailable.termConditionImageAvl = true;
+                    // } else if (docType == 'warrantyDoc') {
+                    //     this.uploadedDocUrls.warrantyDocUrl = fileUrl;
+                    //     this.isDocAvailable.warrantyImageAvl = true;
+                    // } else if (docType == 'customPageDoc') {
+                    //     if (this.currentCustomPageRecordId?.length > 15) {
+                    //         this.currentSelectedCustomPage.customPageDocUrl = fileUrl;
+                    //         this.currentSelectedCustomPage.customPageImageAvl = true;
+                    //     }
+                    // }
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (error) {
+            console.log('Error while uploading file: ', error);
+        }
+    }
+
+    // to delete the temp. document  - in working
+    handleDeleteTempDocs(event) {
+        try {
+            let docType = event.target.dataset.doctype;
+            let contentDocId = event.target.dataset.contentid;
+
+            switch (docType) {
+                case 'primaryDoc':
+                    if (contentDocId)
+                        this.deleteMasterTemplateDocsSF(contentDocId, 'Primary Image');
+
+                    this.uploadedDocUrls.primaryDocUrl = undefined;
+                    this.isDocAvailable.primaryImageAvl = false;
+                    this.removeTempDoc(docType);
+                    break;
+                case 'SecondaryDoc':
+
+                    if (contentDocId)
+                        this.deleteMasterTemplateDocsSF(contentDocId, 'Secondary Image');
+
+                    this.uploadedDocUrls.secondaryDocUrl = undefined;
+                    this.isDocAvailable.secondaryImageAvl = false;
+                    this.removeTempDoc(docType);
+                    break;
+                case 'warrantyDoc':
+
+                    if (contentDocId)
+                        this.deleteMasterTemplateDocsSF(contentDocId, 'Warranty Image');
+
+                    this.uploadedDocUrls.warrantyDocUrl = undefined;
+                    this.isDocAvailable.warrantyImageAvl = false;
+                    this.removeTempDoc(docType);
+                    break;
+                case 'TermConditionDoc':
+
+                    if (contentDocId)
+                        this.deleteMasterTemplateDocsSF(contentDocId, 'Term & Condition Image');
+
+                    this.uploadedDocUrls.termConditionDocUrl = undefined;
+                    this.isDocAvailable.termConditionImageAvl = false;
+                    this.removeTempDoc(docType);
+                    break;
+
+                case 'customPageDoc':
+                    if (contentDocId)
+                        this.deleteMasterTemplateDocsSF(contentDocId, 'Custom Page Document');
+
+                    this.currentSelectedCustomPage.customPageDocUrl = undefined;
+                    this.currentSelectedCustomPage.customPageImageAvl = false;
+                    this.removeTempDoc(docType);
+                    break;
+            }
+
+
+        } catch (error) {
+            console.log('## in the error delete: ', error);
+        }
+    }
+
+    // to remove that image from the delete icon - in working
+    removeTempDoc(docType) {
+        try {
+            // removing from the list of uploadedDocumentList 
+            const index = this.uploadedDocumentList.findIndex(ele => {
+                return ele.filename == docType;
+            });
+            if (index !== -1) {
+                this.uploadedDocumentList.splice(index, 1);
+            }
+        } catch (error) {
+            console.log('## in the delete temp image: ', error);
+        }
+    }
+
+    // to upload file in the bulk - in working
+    async uploadBulkFilesSF(recordId) {
+        try {
+            const result = await uploadBulkFiles({ filesJson: JSON.stringify(this.uploadedDocumentList), recId: recordId });
+
+        } catch (error) {
+            console.error('## in the er: ', error);
+        }
+    }
+
+    async fetchQuoteDocumentsOnly() {
+        console.log('fetchQuoteDocumentsOnly : ',);
+        try {
+            const result = await getQuoteDocumentLinks({ quoteId: this.quoteId });
+            if (result?.ContentDocumentLinks?.length > 0) {
+                result.ContentDocumentLinks.forEach(ele => {
+                    let imageUrl = `/sfc/servlet.shepherd/version/download/${ele?.ContentDocument?.LatestPublishedVersionId}`;
+                    let imageTitle = ele?.ContentDocument?.Title;
+                    let conDoctId = ele?.ContentDocumentId;
+
+                    if (imageTitle === 'primaryDoc') {
+                        this.uploadedDocUrls.primaryDocUrl = imageUrl;
+                        this.isDocAvailable.primaryImageAvl = true;
+                        this.contentDocId.primaryDocId = conDoctId;
+                    }
+
+                    if (imageTitle === 'SecondaryDoc') {
+                        this.uploadedDocUrls.secondaryDocUrl = imageUrl;
+                        this.isDocAvailable.secondaryImageAvl = true;
+                        this.contentDocId.secondaryDocId = conDoctId;
+                    }
+                    if (imageTitle == 'warrantyDoc') {
+                        this.uploadedDocUrls.warrantyDocUrl = imageUrl;
+                        this.isDocAvailable.warrantyImageAvl = true;
+                        this.contentDocId.warrantyDocId = conDoctId;
+
+                    }
+                    if (imageTitle == 'TermConditionDoc') {
+                        this.uploadedDocUrls.termConditionDocUrl = imageUrl;
+                        this.isDocAvailable.termConditionImageAvl = true;
+                        this.contentDocId.termConDocId = conDoctId;
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error fetching quote documents only:', error);
+        }
+    }
+
+    // to get the documents from the master template - in working
+    async fetchUploadedMasterTemplateDocs() {
+        console.log('fetchUploadedMasterTemplateDocs : ');
+        try {
+            const result = await getLayoutRecord({ mtId: this.recordId });
+            console.log('## result: ', JSON.stringify(result));
+            if (result) {
+                result?.ContentDocumentLinks.forEach(ele => {
+                    let imageUrl = `/sfc/servlet.shepherd/version/download/${ele?.ContentDocument?.LatestPublishedVersionId}`;
+                    let imageTitle = ele?.ContentDocument?.Title;
+                    let conDoctId = ele?.ContentDocumentId;
+
+                    if (imageTitle === 'primaryDoc') {
+                        this.uploadedDocUrls.primaryDocUrl = imageUrl;
+                        this.isDocAvailable.primaryImageAvl = true;
+                        this.contentDocId.primaryDocId = conDoctId;
+                    } else if (imageTitle === 'SecondaryDoc') {
+                        this.uploadedDocUrls.secondaryDocUrl = imageUrl;
+                        this.isDocAvailable.secondaryImageAvl = true;
+                        this.contentDocId.secondaryDocId = conDoctId;
+                    } else if (imageTitle === 'warrantyDoc') {
+                        this.uploadedDocUrls.warrantyDocUrl = imageUrl;
+                        this.isDocAvailable.warrantyImageAvl = true;
+                        this.contentDocId.warrantyDocId = conDoctId;
+                    } else if (imageTitle === 'TermConditionDoc') {
+                        this.uploadedDocUrls.termConditionDocUrl = imageUrl;
+                        this.isDocAvailable.termConditionImageAvl = true;
+                        this.contentDocId.termConDocId = conDoctId;
+                    }
+                });
+
+                if (
+                    this.contentDocId.primaryDocId || this.contentDocId.secondaryDocId ||
+                    this.contentDocId.warrantyDocId || this.contentDocId.termConDocId
+                ) {
+                    await attachDocsToQuote({
+                        quoteId: this.quoteId,
+                        primaryDocId: this.contentDocId.primaryDocId,
+                        secondaryDocId: this.contentDocId.secondaryDocId,
+                        warrantyDocId: this.contentDocId.warrantyDocId,
+                        termConDocId: this.contentDocId.termConDocId
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('## error in fetchUploadedMasterTemplateDocs: ', JSON.stringify(error));
+        }
+    }
+
+
+    // to delete the doucument from the master template object - in working
+    async deleteMasterTemplateDocsSF(contentId, fileName) {
+        try {
+            console.log('## contentId: ', contentId);
+            // await deleteQuoteFile({ contentDocumentId: contentId, quoteId: this.quoteId });
+
+            await deleteFile({ contentDocumentId: contentId });
+
+            this.showToast('Success', `${fileName} Deleted successfully`, 'success');
+        } catch (error) {
+            this.showToast('Error', 'Failed to delete The Document: ' + error?.body?.message, 'error');
+        }
+    }
+
+    handleEditCustomPageName() {
+        this.editCustomPageName = true;
+    }
+
+    handleChangeCustomPageName(event) {
+        this.currentSelectedCustomPage.Name = event.target.value;
+    }
+
+    async handleSaveCustomPageName(event) {
+        try {
+            this.editCustomPageName = false;
+            let recId = event.target.dataset.recid;
+
+            let tempCustomObj = {
+                'Id': recId,
+                'Name': this.currentSelectedCustomPage.Name
+            };
+            await updateCustomPage({ customObj: tempCustomObj });
+
+        } catch (error) {
+            this.showToast('Unexpected Error!', 'Unable to update the Custom Page Name.', 'error');
+        }
+    }
+
+    handleTextValueChange(event) {
+        console.log('## mine: ', event.target.dataset.recid);
+        this.currentSelectedCustomPage.richTextValue = event.target.value;
+    }
+
+    async handleUpdateCustomTextFieldValue(event) {
+        try {
+            let recId = event.target.dataset.recid;
+
+            let tempCustomObj = {
+                'Id': recId,
+                'Text_Page__c': this.currentSelectedCustomPage.richTextValue
+            };
+            await updateCustomPage({ customObj: tempCustomObj });
+
+        } catch (error) {
+            this.showToast('Unexpected Error!', 'Unable to update the Text Field Value.', 'error');
+        }
+    }
+
+    // handleClickPrimary(layoutId) {
+
+    //     this.fileDataPrimary.recordId = layoutId;
+    //     const { base64, filename, recordId } = this.fileDataPrimary;
+    //     console.log('Primary image submitted:', this.PrimaryUploadedFilesUrl);
+    //     uploadFile({ base64, filename, recordId, fieldName: 'Primary_Image__c' }).then(result => {
+    //         this.fileData = null
+    //         console.log('Primary Image File Name ' + this.fileDataPrimary.filename);
+    //     })
+    //         .catch(error => {
+    //             console.log(JSON.stringify(error));
+    //         });
+    // }
+
+    // handleClickDeletePrimaryImage(event) {
+    //     const fileId = event.target.dataset.id;
+
+    //     if (this.primaryContentDocumentId) {
+    //         const contentDocumentId = this.primaryContentDocumentId;
+    //         console.log('Deleting primary image with ID:', contentDocumentId);
+
+    //         deleteFile({ contentDocumentId: contentDocumentId })
+    //             .then(() => {
+    //                 this.primaryImageUrl = '';
+    //                 this.primaryContentDocumentId = '';
+    //                 this.PrimaryUploadedFilesUrl = [];
+    //                 this.PrimaryAvailableBool = false;
+    //                 this.showToast('Success', 'Primary image deleted successfully', 'success');
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error deleting primary image:', error);
+    //                 this.showToast('Error', 'Failed to delete primary image: ' + error.body.message, 'error');
+    //             });
+    //     } else {
+    //         this.PrimaryUploadedFilesUrl = this.PrimaryUploadedFilesUrl.filter(file => file.id !== fileId);
+    //         if (this.PrimaryUploadedFilesUrl.length === 0) {
+    //             this.PrimaryAvailableBool = false;
+    //             this.noImageAvail = true;
+    //         }
+    //     }
+    // }
+
+    // SecondaryOpenfileUpload(event) {
+    //     if (event.target.files.length > 0) {
+    //         const file = event.target.files[0];
+    //         const fileUrl = URL.createObjectURL(file);
+    //         this.SecondaryUploadedFilesUrl = [...this.SecondaryUploadedFilesUrl, { id: fileUrl }];
+    //         var reader = new FileReader()
+    //         reader.onload = () => {
+    //             var base64 = reader.result.split(',')[1]
+    //             this.fileDataSecondary = {
+    //                 'filename': file.name,
+    //                 'base64': base64,
+    //                 'recordId': ''
+    //             }
+    //             console.log(this.fileData);
+    //         }
+    //         reader.readAsDataURL(file)
+
+    //         this.SecondaryAvailableBool = true;
+    //         this.noImageAvail = false;
+    //     }
+    // }
+
+    // handleClickSecondary(layoutId) {
+    //     this.fileDataSecondary.recordId = layoutId;
+    //     const { base64, filename, recordId } = this.fileDataSecondary;
+    //     console.log('Secondary image submitted:', this.SecondaryUploadedFilesUrl);
+    //     uploadFile({ base64, filename, recordId, fieldName: 'Secondary_Image__c' }).then(result => {
+    //         this.fileData = null
+    //         console.log('Secondary Image File Name ' + this.fileDataSecondary.filename);
+    //     })
+    //         .catch(error => {
+    //             console.log(JSON.stringify(error));
+    //         });
+    // }
+
+    // handleClickDeleteSecondaryImage(event) {
+    //     const fileId = event.target.dataset.id;
+    //     if (this.secondaryContentDocumentId) {
+    //         const contentDocumentId = this.secondaryContentDocumentId;
+    //         console.log('Deleting secondary image with ID:', contentDocumentId);
+
+    //         deleteFile({ contentDocumentId: contentDocumentId })
+    //             .then(() => {
+    //                 this.secondaryImageUrl = '';
+    //                 this.secondaryContentDocumentId = '';
+    //                 this.SecondaryUploadedFilesUrl = [];
+    //                 this.SecondaryAvailableBool = false;
+    //                 this.showToast('Success', 'Secondary image deleted successfully', 'success');
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error deleting secondary image:', error);
+    //                 this.showToast('Error', 'Failed to delete secondary image: ' + error.body.message, 'error');
+    //             });
+    //     } else {
+    //         this.SecondaryUploadedFilesUrl = this.SecondaryUploadedFilesUrl.filter(file => file.id !== fileId);
+    //         if (this.SecondaryUploadedFilesUrl.length === 0) {
+    //             this.SecondaryAvailableBool = false;
+    //             this.noImageAvail = true;
+    //         }
+    //     }
+    // }
+
+    /*
+        loadLayouts() {
+    
+        getLayoutRecord({ mtId: this.recordId })
+            .then(result => {
+                this.reportType = result.Layout_Name__c;
+                this.letterForm = result.Letter_from_the_owner__c;
+                this.currencyType = result.Currency__c;
+                this.zipCode = result.Zip_code_Postal_code__c;
+                this.stateProvince = result.State_Province__c;
+                this.city = result.City__c;
+                this.streetAddress = result.Street_Address__c;
+                this.lastName = result.Last_Name__c;
+                this.firstName = result.First_Name__c;
+                this.CreatedDate = result.Date__c;
+                this.primaryImage = result.Primary_Image__c;
+                this.secondaryImage = result.Secondary_Image__c;
+                this.layoutRecord = result;
+                /*
+                if (result.ContentDocumentLinks && result.ContentDocumentLinks.length > 0) {
+                    let primaryImageId = null;
+                    let secondaryImageId = null;
+                    let warrantyImageId = null;
+                    result.ContentDocumentLinks.forEach((docLink, index) => {
+                        const documentId = docLink.ContentDocumentId;
+    
+                        if (index === 0) {
+                            primaryImageId = documentId;
+                            console.log('Primary Image ID: ' + primaryImageId);
+                        } else if (index === 1) {
+                            secondaryImageId = documentId;
+                            console.log('Secondary Image ID: ' + secondaryImageId);
+                        } else if (index === 2) {
+                            warrantyImageId = documentId
+                            this.warrantyImageId = documentId;
+                        }
+                    });
+    
+                    if (primaryImageId) {
+                        const primaryContentVersionId = result.ContentDocumentLinks[0].ContentDocument.LatestPublishedVersionId;
+                        this.primaryImageUrl = `/sfc/servlet.shepherd/version/download/${primaryContentVersionId}`;
+                        this.primaryContentDocumentId = primaryImageId;
+                        this.PrimaryAvailableBool = true;
+                    }
+    
+                    if (secondaryImageId) {
+                        const secondaryContentVersionId = result.ContentDocumentLinks[1].ContentDocument.LatestPublishedVersionId;
+                        this.secondaryImageUrl = `/sfc/servlet.shepherd/version/download/${secondaryContentVersionId}`;
+                        this.secondaryContentDocumentId = secondaryImageId;
+                        this.SecondaryAvailableBool = true;
+                    }
+    
+                    if (warrantyImageId) {
+                        console.log('## thirdimage: ', thirdDocumentId);
+                        console.log('## url: ', `/sfc/servlet.shepherd/version/download/${thirdDocumentId}`);
+                        // this.isWarrantyDocAvl = true;
+                        // const thirdDocumentId = result.ContentDocumentLinks[2].ContentDocument.LatestPublishedVersionId;
+                        // this.warrantyImageUrlMain = `/sfc/servlet.shepherd/version/download/${thirdDocumentId}`;
+                        // this.secondaryContentDocumentId = secondaryImageId;
+                    }
+    
+    
+                }
+                })
+                .catch(error => {
+                    console.error('Error loading layouts:', error);
+                });
+    
+            getCustomPage({ recordId: this.recordId })
+                .then(result => {
+                    console.log('Record ID2.......' + JSON.stringify(result));
+    
+                    result.forEach(element => {
+                        this.clickCount++;
+                        var newElement = {
+                            Id: this.ElementList.length,
+                            Name: element.Name,
+                            label: element.label__c,
+                            selected: false,
+                            editMode: element.editMode__c,
+                            toggle: element.toggle__c
+                        };
+                        console.log('newElement --- ' + JSON.stringify(newElement));
+                        this.ElementList.push(newElement);
+                    });
+    
+                })
+                .catch(error => {
+                    console.error('Error loading layouts:', error);
+                });
+        }
+    */
+
+    // openfileUpload(event) {
+    //     if (event.target.files.length > 0) {
+    //         const file = event.target.files[0];
+    //         const fileUrl = URL.createObjectURL(file);
+    //         this.uploadedFilesUrl = [...this.uploadedFilesUrl, { id: fileUrl }];
+    //         this.secondaryAvailableBool = true;
+    //         this.noImageAvailCertification = false;
+    //     }
+    // }
+
+    // handleClick() {
+    //     console.log('Certification/secondary logo submitted:', this.uploadedFilesUrl);
+    // }
+
+    // handleClickDeleteCertification(event) {
+    //     const fileId = event.target.dataset.id;
+    //     this.uploadedFilesUrl = this.uploadedFilesUrl.filter(file => file.id !== fileId);
+    //     if (this.uploadedFilesUrl.length === 0) {
+    //         this.secondaryAvailableBool = false;
+    //         this.noImageAvailCertification = true;
+    //     }
+    // }
+
+    /*
+    handlImageDescriptionChange(event) {
+    
+        var imageId = event.currentTarget.dataset.id;
+        var dataval = event.target.value;
+        this.InspectionImagesList.forEach(element => {
+            if (imageId === element.Id) {
+                element.Image_Description__c = dataval;
+            }
+        });
+    }
+    
+    handlImageDescriptionChange(event) {
+    
+        var imageId = event.currentTarget.dataset.id;
+        var dataval = event.target.value;
+        this.InspectionImagesList.forEach(element => {
+            if (imageId === element.Id) {
+                element.Image_Description__c = dataval;
+            }
+        });
+    }
+    */
+
+
+    // imageUrl;
+    // warrantyImageUrlMain;
+    // termConditionImageUrlMain;
+    // warrantyImageid;
+    // termConditionDocId = '';
+    // warrantyDocPreviewUrl = '';
+    // TCDocPreviewUrl;
+    // isTCDocAvl = false;
+    // isWarrantyDocAvl = false;
+    // selectedRecordId = '';
+    // @track reportType = '';
+    // @track PrimaryAvailableBool = false;
+    // @track showInspectionImages = false;
+    // @track noImageAvail = false;
+    // @track SecondaryAvailableBool = false;
+    // @track SecondaryUploadedFilesUrl = [];
+    // fileDataSecondary;
+    // @track primaryImageUrl = '';
+    // @track secondaryImageUrl = '';
+    // @track primaryContentDocumentId;
+    // @track secondaryContentDocumentId;
+    // @track QDR = '';
+    // @track uploadedFilesUrl = [];
+    // @track noImageAvailCertification = false;
+    // @track IICRC = '';
+    // @track primaryImageUrl = '';
+    // @track secondaryImageUrl = '';
+    // @track LetterFromTheOwnerBool = false;
+    // @track InspectionBool = false;
+
+
+    /*
+        // to upload the primary image
+        PrimaryOpenfileUpload(event) {
+    
+            if (event.target.files.length > 0) {
+                const file = event.target.files[0];
+                const fileUrl = URL.createObjectURL(file);
+                this.PrimaryUploadedFilesUrl = [...this.PrimaryUploadedFilesUrl, { id: fileUrl }];
+                var reader = new FileReader()
+                reader.onload = () => {
+                    var base64 = reader.result.split(',')[1]
+                    this.fileDataPrimary = {
+                        'filename': file.name,
+                        'base64': base64,
+                        'recordId': ''
+                    }
+                    console.log(this.fileData);
+    
+                }
+                reader.readAsDataURL(file)
+                // this.PrimaryAvailableBool = true;
+                // this.noImageAvail = false;
+            }
+        }
+    */
+
+    @track deleteCustomPageModal = false;
+    @track selectedDeletPageRecord;
+
+    handleClickOnDeleteCustomPage(event) {
+        this.deleteCustomPageModal = true
+        this.selectedDeletPageRecord = event.currentTarget.dataset.recid;
+        console.log('selectedDeletPageRecord : ', this.selectedDeletPageRecord);
+    }
+
+    handleClickOnCancelDeleteCustomPage() {
+        this.deleteCustomPageModal = false;
+    }
+
+    handleDeleteCustomPage() {
+        const layoutId = this.selectedDeletPageRecord;
+        this.ElementList = this.ElementList.filter(item => item.Id !== layoutId);
+
+        deleteLayoutPage({ layoutId })
+            .then(() => {
+                this.showToast('Success', 'Record successfully deleted!', 'success');
+                // Remove the deleted layout from the list
+                const mstTmpObj = {
+                    'Id': this.recordId,
+                    'Pages_JSON__c': JSON.stringify(this.ElementList)
+                };
+                UpdateMasterLayout({ mstLayoutObj: mstTmpObj })
+                    .then(() => {
+                        this.handleClickOnCancelDeleteCustomPage();
+                        this.ElementList.forEach(result => {
+                            if (result.label == 'Title') {
+                                result.selected = true;
+                                this.titlePageSelected = true;
+                                this.pageLabel = result.label;
+                            } else {
+                                result.selected = false;
+                            }
+                        });
+                    })
+                    .catch(error => {
+                    });
+            })
+            .catch(error => {
+                console.log('error : ', JSON.stringify(error));
+                this.showToast('Error', 'Failed to delete layout or associated files', 'error');
+                this.isLoading = false; // Stop loading state in case of error
+            });
+    }
+
+
+    // -----------------------------------------------------------------------------------------------------
+
+    @track primaryImageUrl;
+    @track secondaryImageUrl;
+
+    primaryDocId;
+    secondaryDocId;
+
+    // // Primary upload
+    // handlePrimaryUpload(event) {
+    //     const uploadedFiles = event.detail.files;
+    //     if (uploadedFiles.length > 0) {
+    //         this.primaryDocId = uploadedFiles[0].documentId;
+    //         this.primaryImageUrl = `/sfc/servlet.shepherd/version/download/${this.primaryDocId}`;
+
+    //         saveImageUrl({
+    //             recordId: this.quoteId,
+    //             fieldName: 'Primary_Image__c',
+    //             fileUrl: this.primaryImageUrl
+    //         }).then(() => {
+    //             console.log('Primary image URL saved to Quotes__c');
+    //         }).catch(error => {
+    //             console.error('Error saving Primary image', error);
+    //         });
+    //     }
+    // }
+
+    // Secondary upload
+    // handleSecondaryUpload(event) {
+    //     const uploadedFiles = event.detail.files;
+    //     if (uploadedFiles.length > 0) {
+    //         this.secondaryDocId = uploadedFiles[0].documentId;
+    //         this.secondaryImageUrl = `/sfc/servlet.shepherd/version/download/${this.secondaryDocId}`;
+
+    //         saveImageUrl({
+    //             recordId: this.quoteId,
+    //             fieldName: 'Secondary_Image__c',
+    //             fileUrl: this.secondaryImageUrl
+    //         }).then(() => {
+    //             console.log('Secondary image URL saved to Quotes__c');
+    //         }).catch(error => {
+    //             console.error('Error saving Secondary image', error);
+    //         });
+    //     }
+    // }
+
+    // // Delete Primary
+    // handleDeletePrimary() {
+    //     this.primaryImageUrl = null;
+    //     this.primaryDocId = null;
+
+    //     saveImageUrl({
+    //         recordId: this.quoteId,
+    //         fieldName: 'Primary_Image__c',
+    //         fileUrl: null
+    //     });
+    // }
+
+    // // Delete Secondary
+    // handleDeleteSecondary() {
+    //     this.secondaryImageUrl = null;
+    //     this.secondaryDocId = null;
+
+    //     saveImageUrl({
+    //         recordId: this.quoteId,
+    //         fieldName: 'Secondary_Image__c',
+    //         fileUrl: null
+    //     });
+    // }
+
+    triggerPrimarySelect() {
+        this.template.querySelector('[data-id="primaryInput"]').click();
+    }
+    triggerSecondarySelect() {
+        this.template.querySelector('[data-id="secondaryInput"]').click();
+    }
+
+    // Primary Upload
+    handlePrimaryUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            this.readFile(file).then(base64 => {
+                uploadFile({ base64Data: base64, fileName: file.name, parentId: this.quoteId })
+                    .then(result => {
+                        this.primaryDocId = result.documentId; // 069
+                        // ✅ Correct URL with 068 (latest version)
+                        this.primaryImageUrl = `/sfc/servlet.shepherd/version/download/${result.latestVersionId}`;
+
+                        return saveImageUrl({
+                            recordId: this.quoteId,
+                            fieldName: 'Primary_Image__c',
+                            fileUrl: this.primaryImageUrl
+                        });
+                    })
+                    .catch(err => console.error('Upload error', err));
+            });
+        }
+    }
+
+
+    // Delete
+    handleDeletePrimary() {
+        this.primaryImageUrl = null;
+        this.primaryDocId = null;
+        saveImageUrl({ recordId: this.quoteId, fieldName: 'Primary_Image__c', fileUrl: null });
+    }
+
+    // Helper: Read file
+    readFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Secondary Upload
+    handleSecondaryUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            this.readFile(file).then(base64 => {
+                uploadFile({ base64Data: base64, fileName: file.name, parentId: this.quoteId })
+                    .then(result => {
+                        this.secondaryDocId = result.documentId; // 069
+                        // ✅ Correct URL with 068 (latest version)
+                        this.secondaryImageUrl = `/sfc/servlet.shepherd/version/download/${result.latestVersionId}`;
+
+                        return saveImageUrl({
+                            recordId: this.quoteId,
+                            fieldName: 'Secondary_Image__c',
+                            fileUrl: this.secondaryImageUrl
+                        });
+                    })
+                    .catch(err => console.error('Upload error', err));
+            });
+        }
+    }
+
+    // Delete Primary
+    handleDeletePrimary() {
+        this.primaryImageUrl = null;
+        this.primaryDocId = null;
+        saveImageUrl({ recordId: this.quoteId, fieldName: 'Primary_Image__c', fileUrl: null });
+    }
+
+    // Delete Secondary
+    handleDeleteSecondary() {
+        this.secondaryImageUrl = null;
+        this.secondaryDocId = null;
+
+        saveImageUrl({
+            recordId: this.quoteId,
+            fieldName: 'Secondary_Image__c',
+            fileUrl: null
+        });
+    }
+
+    // File reader helper
+    readFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]); // Base64 only
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+
+    // -----------------------------------------------------------------------------------------------------
+
+
+  handleWarrantyUpload(event) {
+
+    const file = event.target.files[0];
+
+    if (file) {
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+
+            this.warrantyUrl = reader.result;
+
+            this.ElementList = this.ElementList.map(page => {
+                if (page.label === 'Warranty') {
+                    return { ...page, warrantyImage: reader.result };
+                }
+                return page;
+            });
+
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+}
+
+handleDeleteWarranty() {
+
+    this.warrantyUrl = null;
+
+    this.ElementList = this.ElementList.map(page => {
+        if (page.label === 'Warranty') {
+            return { ...page, warrantyImage: null };
+        }
+        return page;
+    });
+
+}
+
+handleTermConditionUpload(event) {
+
+    const file = event.target.files[0];
+
+    if (file) {
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+
+            this.termAndConditionUrl = reader.result;
+
+            this.ElementList = this.ElementList.map(page => {
+                if (page.label === 'Terms and Conditions') {
+                    return { ...page, termConditionImage: reader.result };
+                }
+                return page;
+            });
+
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+}
+
+handleDeleteTermCondition() {
+
+    this.termAndConditionUrl = null;
+
+    this.ElementList = this.ElementList.map(page => {
+        if (page.label === 'Terms and Conditions') {
+            return { ...page, termConditionImage: null };
+        }
+        return page;
+    });
+
+}
+    get quoteid() {
+        return this.quoteId;
+    }
+
+
+}
